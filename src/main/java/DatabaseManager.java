@@ -1,5 +1,3 @@
-import org.bukkit.configuration.file.FileConfiguration;
-
 import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
@@ -130,6 +128,7 @@ public class DatabaseManager {
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate("CREATE DATABASE IF NOT EXISTS " + databaseName);
         }
+        connection.close();
         // connecting to the plugin's database
         url = "jdbc:mysql://" + ipAddress + ":" + port + "/" + databaseName;
         connection = DriverManager.getConnection(url, user, password);
@@ -147,12 +146,7 @@ public class DatabaseManager {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS " + TABLE_GROUPS + "(" + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " VARCHAR (30) NOT NULL, " + TABLE_GROUPS_ATTRIBUTE_GROUPPREFIX + " VARCHAR (10) NOT NULL, " + TABLE_GROUPS_ATTRIBUTE_GROUPLEVEL + " INTEGER NOT NULL, " + TABLE_GROUPS_ATTRIBUTE_GROUPCOLORCODE + " INTEGER NOT NULL, PRIMARY KEY(" + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + "))");
         }
         // insert the default group into the table if not existent
-        boolean exists;
-        try (Statement statement = connection.createStatement()) {
-            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + defaultGroupName + "'");
-            exists = res.isBeforeFirst();
-        }
-        if (!exists) {
+        if (!existsGroup(defaultGroupName)) {
             try (Statement statement = connection.createStatement()) {
                 statement.executeUpdate("INSERT INTO " + TABLE_GROUPS + "(" + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + ", " + TABLE_GROUPS_ATTRIBUTE_GROUPPREFIX + ", " + TABLE_GROUPS_ATTRIBUTE_GROUPLEVEL + ", " + TABLE_GROUPS_ATTRIBUTE_GROUPCOLORCODE + ") VALUES('" + defaultGroupName + "','" + defaultGroupPrefix + "','" + defaultGroupLevel + "'," + defaultGroupColorCode + ")");
             }
@@ -163,57 +157,148 @@ public class DatabaseManager {
         }
     }
 
+    /**
+     * Creates a new group with the given parameters
+     * @param name the group's name
+     * @param prefix the group's prefix
+     * @param level the group's level
+     * @param colorCode the group's color code
+     * @throws IllegalArgumentException if the given group name is empty or the given group name already exists
+     * @throws SQLException if something goes wrong with the database connection
+     */
     public void createGroup(String name, String prefix, int level, int colorCode) throws IllegalArgumentException, SQLException {
-        //TODO
+        checkForEmptyString(name);
+        if(existsGroup(name))
+            throw new IllegalArgumentException("The given group name does already exist!");
         try (Statement statement = connection.createStatement()) {
-            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + name + "'");
-            if(!res.isBeforeFirst())
-                throw new IllegalArgumentException("The given group name does already exist!");
             statement.executeUpdate("INSERT INTO " + TABLE_GROUPS + "(" + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + ", " + TABLE_GROUPS_ATTRIBUTE_GROUPPREFIX + ", " + TABLE_GROUPS_ATTRIBUTE_GROUPLEVEL + ", " + TABLE_GROUPS_ATTRIBUTE_GROUPCOLORCODE + ") VALUES('" + name + "','" + prefix + "','" + level + "'," + colorCode + ")");
         }
     }
 
-    public void renameGroup(String group, String newName) throws SQLException {
-        //TODO
+    /**
+     * Changes the given group's name to the given new name
+     * @param group the group's old name
+     * @param newName the group's new name
+     * @throws IllegalArgumentException if the given group name is empty or does not exist or the given new name already exists
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public void editGroupName(String group, String newName) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(group);
+        checkForEmptyString(newName);
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist!");
+        if(defaultGroupName.equals(group))
+            throw new IllegalArgumentException("The default group must not be renamed!");
+        if(existsGroup(newName))
+            throw new IllegalArgumentException("The given new group name does already exist!");
         try (Statement statement = connection.createStatement()) {
-            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + newName + "'");
-            if(!res.isBeforeFirst())
-                throw new IllegalArgumentException("The given group name does already exist!");
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + newName + "' WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
         }
     }
 
-    public void editGroupPrefix(String group, String prefix) throws SQLException {
-        //TODO
+    /**
+     * Changes the given group's prefix to the given new prefix
+     * @param group the group's name
+     * @param prefix the group's new prefix
+     * @throws IllegalArgumentException if the given group name is empty or does not exist
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public void editGroupPrefix(String group, String prefix) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(group);
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist!");
         try(Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPPREFIX + " = '" + prefix + "' WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
         }
     }
 
-    public void editGroupColorCode(String group, int colorCode) throws SQLException {
-        //TODO
+    /**
+     * Changes the given group's color code to the given new color code
+     * @param group the group's name
+     * @param colorCode the group's new color code
+     * @throws IllegalArgumentException if the given group name is empty or does not exist
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public void editGroupColorCode(String group, int colorCode) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(group);
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist!");
         try(Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPCOLORCODE + " = " + colorCode + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
         }
     }
 
-    public void changeGroupLevel(String group, int level) throws SQLException {
-        //TODO
+    /**
+     * Changes the given group's level to the given new level
+     * @param group the group's name
+     * @param level the group's new level
+     * @throws IllegalArgumentException if the given group name is empty or does not exist
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public void editGroupLevel(String group, int level) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(group);
+        if (!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist!");
         try(Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPLEVEL + " = " + level + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
         }
     }
 
-    public void removeGroup(String group) {
-        //TODO
+    /**
+     * Collects all users belonging to the given group
+     * @param group the given group's name
+     * @return a list of the group's members' uuids
+     * @throws IllegalArgumentException if the given group name is empty or does not exist
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public List<String> getGroupsUsers(String group) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(group);
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist!");
+        List<String> list = new LinkedList<>();
+        try(Statement statement = connection.createStatement()){
+            ResultSet res = statement.executeQuery("SELECT " + TABLE_USERS_ATTRIBUTE_USERUUID + " FROM " + TABLE_USERS + " WHERE " + TABLE_USERS_ATTRIBUTE_USERGROUP + "='" + group + "'");
+            while(!res.isClosed() && res.next()) {
+                list.add(res.getString(1));
+            }
+        }
+        return list;
     }
 
+    /**
+     * Deletes the given group unless it's the default group
+     * @param group the group's name
+     * @throws IllegalArgumentException if the given group name is empty or does not exist, or it's the default group's name
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public void removeGroup(String group) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(group);
+        if(defaultGroupName.equals(group))
+            throw new IllegalArgumentException("The default group must not be deleted");
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist!");
+        List<String> users = getGroupsUsers(group);
+        for(String u : users) {
+            removeUserFromGroup(u, group);
+        }
+        try(Statement statement = connection.createStatement()){
+            statement.executeUpdate("DELETE FROM " + TABLE_GROUPS + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
+        }
+    }
+
+    /**
+     * Adds the given user to the given group
+     * @param uuid the user's uuid
+     * @param group the given group's name
+     * @throws IllegalArgumentException if the given group name is empty or does not exist
+     * @throws SQLException if something goes wrong with the database connection
+     */
     public void addUserToGroup(String uuid, String group) throws IllegalArgumentException, SQLException {
-        //TODO
+        checkForEmptyString(group);
+        checkForEmptyString(uuid);
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist!");
         try (Statement statement = connection.createStatement()) {
-            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
-            if(!res.isBeforeFirst())
-                throw new IllegalArgumentException("The given group does not exist!");
             statement.executeUpdate("INSERT INTO " + TABLE_USERS + "(" + TABLE_USERS_ATTRIBUTE_USERUUID + ", " + TABLE_USERS_ATTRIBUTE_USERGROUP + ", " + TABLE_USERS_ATTRIBUTE_EXPIRATIONTIME + ") VALUES('" + uuid + "','" + group + "', NULL)");
         }
         updateUser(uuid);
@@ -223,12 +308,35 @@ public class DatabaseManager {
         //TODO
     }
 
-    private void removeUserFromGroup(String uuid, String group) {
-        //TODO
+    /**
+     * Removes the given user from the given group
+     * @param uuid the user's uuid
+     * @param group the group's name
+     * @throws IllegalArgumentException if at least one of the given parameters is an empty String or the given group does not exist or the given user is no member of the given group
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public void removeUserFromGroup(String uuid, String group) throws IllegalArgumentException, SQLException{
+        checkForEmptyString(uuid);
+        checkForEmptyString(group);
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist!");
+        if(!getGroups(uuid).contains(group))
+            throw new IllegalArgumentException("The given user is not a member of the given group!");
+        try(Statement statement = connection.createStatement()){
+            statement.executeUpdate("DELETE FROM " + TABLE_USERS + " WHERE " + TABLE_USERS_ATTRIBUTE_USERGROUP + " = '" + group + "' AND " + TABLE_USERS_ATTRIBUTE_USERUUID + " = '" + uuid + "'");
+        }
+        updateUser(uuid);
     }
 
-    public List<String> getGroups(String uuid) throws SQLException {
-        //TODO
+    /**
+     * Returns a list of all the user's groups' names
+     * @param uuid the user's uuid
+     * @return a list of all the groups' names the given user is member of
+     * @throws IllegalArgumentException if the given uuid is an empty String
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public List<String> getGroups(String uuid) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(uuid);
         List<String> list = new LinkedList<>();
         try(Statement statement = connection.createStatement()) {
             ResultSet res = statement.executeQuery("SELECT " + TABLE_USERS_ATTRIBUTE_USERGROUP + " FROM " + TABLE_USERS + " WHERE " + TABLE_USERS_ATTRIBUTE_USERUUID + " = '" + uuid + "'");
@@ -245,17 +353,56 @@ public class DatabaseManager {
         return 0;
     }
 
-    public String getPrefix(String uuid) {
-        //TODO
-        return "prefix";
-    }
-
-    public char getColorChar(String uuid) {
+    public char getGroupColorChar(String group) {
         //TODO
         return 'c';
     }
 
-    private void updateUser(String uuid) {
+    public String getGroupPrefix(String group) {
         //TODO
+        return "prefix";
+    }
+
+    public String getUserPrefix(String uuid) {
+        //TODO
+        return "prefix";
+    }
+
+    public char getUserColorChar(String uuid) {
+        //TODO
+        return 'c';
+    }
+
+    /**
+     * Updates the given user's ingame appearance whenever necessary (e.g. tablists / scoreboards)
+     * @param uuid the user's uuid
+     */
+    public void updateUser(String uuid) {
+        //TODO
+    }
+
+    // HELPER
+
+    /**
+     * Checks whether the given groupname exists or not
+     * @param groupname the given groupname
+     * @return true if the given groupname does exist - false if the given groupname does not exist
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    private boolean existsGroup(String groupname) throws SQLException {
+        try(Statement statement = connection.createStatement()) {
+            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + groupname + "'");
+            return res.isBeforeFirst();
+        }
+    }
+
+    /**
+     * Checks whether the given text is empty
+     * @param text the given text
+     * @throws IllegalArgumentException if the given text is empty
+     */
+    private void checkForEmptyString(String text) throws IllegalArgumentException {
+        if(text.equals(""))
+            throw new IllegalArgumentException("The group name must contain at least 1 character!");
     }
 }

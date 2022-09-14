@@ -73,7 +73,7 @@ public class GroupListener implements Listener {
     public void onJoin(PlayerJoinEvent e) {
         Player player = e.getPlayer();
         try {
-            if(databaseManager.getGroups(player.getUniqueId().toString()).isEmpty()){
+            if(!databaseManager.getGroups(player.getUniqueId().toString()).contains(defaultGroupName)){
                 try {
                     databaseManager.addUserToGroup(player.getUniqueId().toString(), defaultGroupName);
                 } catch (IllegalArgumentException|SQLException ex) {
@@ -109,8 +109,8 @@ public class GroupListener implements Listener {
      */
     private String replacePlaceMaker(String text, Player player){
         text = text.replace("%name%", player.getName());
-        text = text.replace("%prefix%", databaseManager.getPrefix(player.getUniqueId().toString()));
-        text = text.replace("%color%", String.valueOf(databaseManager.getColorChar(player.getUniqueId().toString())));
+        text = text.replace("%prefix%", databaseManager.getUserPrefix(player.getUniqueId().toString()));
+        text = text.replace("%color%", String.valueOf(databaseManager.getUserColorChar(player.getUniqueId().toString())));
         return text;
     }
 }
