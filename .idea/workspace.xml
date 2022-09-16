@@ -4,15 +4,24 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a1b88b6d-4934-47fc-84f6-d387b3dd169b" name="Changes" comment="-">
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/TestClass.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/TestDatabaseManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
+    <list default="true" id="a1b88b6d-4934-47fc-84f6-d387b3dd169b" name="Changes" comment="JUnit Tests">
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/sqldialects.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandCreateGroup.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandDeleteGroup.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandEditGroupName.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandEditGroupPrefix.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandGetGroups.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandSign.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/DatabaseCommand.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/DatabaseManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/DatabaseManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/GroupListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/GroupListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gradlew" beforeDir="false" afterPath="$PROJECT_DIR$/gradlew" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/ConfigBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/ConfigBuilder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/DatabaseManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/DatabaseManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/GroupListener.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/GroupListener.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/TestClass.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/TestDatabaseManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/TestDatabaseManager.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,21 +83,36 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
   <component name="ProjectId" id="2EjNQnc6TI7o7gJxgKgdLiVeZv2" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;extract.method.default.visibility&quot;: &quot;private&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "OverrideImplement.generate.javadoc": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "extract.method.default.visibility": "private",
+    "run.code.analysis.last.selected.profile": "pProject Default"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql"
+    ]
   }
-}</component>
-  <component name="RunManager" selected="Gradle.Tests in 'GroupPluginSchnatz.test'">
-    <configuration name="GroupPluginSchnatz [classes]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Gradle.TestDatabaseManager">
+    <configuration name="GroupPluginSchnatz [build]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -99,7 +123,7 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value="classes" />
+            <option value="build" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -109,7 +133,7 @@
       <DebugAllEnabled>false</DebugAllEnabled>
       <method v="2" />
     </configuration>
-    <configuration name="GroupPluginSchnatz [clean]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
+    <configuration name="GroupPluginSchnatz [jar]" type="GradleRunConfiguration" factoryName="Gradle" temporary="true">
       <ExternalSystemSettings>
         <option name="executionName" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
@@ -120,7 +144,7 @@
         </option>
         <option name="taskNames">
           <list>
-            <option value="clean" />
+            <option value="jar" />
           </list>
         </option>
         <option name="vmOptions" />
@@ -197,11 +221,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Gradle.Tests in 'GroupPluginSchnatz.test'" />
         <item itemvalue="Gradle.TestDatabaseManager" />
+        <item itemvalue="Gradle.GroupPluginSchnatz [jar]" />
         <item itemvalue="Gradle.GroupPluginSchnatz [test]" />
-        <item itemvalue="Gradle.GroupPluginSchnatz [clean]" />
-        <item itemvalue="Gradle.GroupPluginSchnatz [classes]" />
+        <item itemvalue="Gradle.Tests in 'GroupPluginSchnatz.test'" />
+        <item itemvalue="Gradle.GroupPluginSchnatz [build]" />
       </list>
     </recent_temporary>
   </component>
@@ -215,7 +239,12 @@
       <updated>1663105022262</updated>
       <workItem from="1663105024048" duration="3614000" />
       <workItem from="1663149274340" duration="11322000" />
-      <workItem from="1663179325714" duration="3324000" />
+      <workItem from="1663179325714" duration="13697000" />
+      <workItem from="1663245317995" duration="5274000" />
+      <workItem from="1663267459965" duration="958000" />
+      <workItem from="1663273206313" duration="7261000" />
+      <workItem from="1663328201711" duration="4786000" />
+      <workItem from="1663348136060" duration="2884000" />
     </task>
     <task id="LOCAL-00001" summary="-">
       <created>1663105171477</created>
@@ -224,7 +253,14 @@
       <option name="project" value="LOCAL" />
       <updated>1663105171477</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="JUnit Tests">
+      <created>1663182819749</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1663182819749</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -238,14 +274,46 @@
             <State />
           </value>
         </entry>
+        <entry key="bea55de8-ffed-4fca-a389-a4ba4127bd0c">
+          <value>
+            <State>
+              <option name="CUSTOM_BOOLEAN_PROPERTIES">
+                <map>
+                  <entry key="Show.Git.Branches" value="true" />
+                </map>
+              </option>
+              <option name="SHOW_ONLY_AFFECTED_CHANGES" value="true" />
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="HEAD" />
+                      </list>
+                    </value>
+                  </entry>
+                  <entry key="roots">
+                    <value>
+                      <list>
+                        <option value="$PROJECT_DIR$" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
       </map>
     </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="-" />
-    <option name="LAST_COMMIT_MESSAGE" value="-" />
+    <MESSAGE value="JUnit Tests" />
+    <option name="LAST_COMMIT_MESSAGE" value="JUnit Tests" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/GroupPluginSchnatz$Tests_in__GroupPluginSchnatz_test_.ic" NAME="Tests in 'GroupPluginSchnatz.test' Coverage Results" MODIFIED="1663158556899" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GroupPluginSchnatz$TestDatabaseManager.ic" NAME="TestDatabaseManager Coverage Results" MODIFIED="1663331646964" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/GroupPluginSchnatz$Tests_in__GroupPluginSchnatz_test_.ic" NAME="Tests in 'GroupPluginSchnatz.test' Coverage Results" MODIFIED="1663278306558" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="idea" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
   </component>
 </project>

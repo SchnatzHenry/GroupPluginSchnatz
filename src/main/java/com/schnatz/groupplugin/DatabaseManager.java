@@ -1,9 +1,11 @@
+package com.schnatz.groupplugin;
+
 import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 
 /**
- * This class is used to manage all database actions (database queries).
+ * This class is used to manage all database actions.
  * @author Henry Schnatz
  */
 public class DatabaseManager {
@@ -163,13 +165,19 @@ public class DatabaseManager {
      * @param prefix the group's prefix
      * @param level the group's level
      * @param colorCode the group's color code
-     * @throws IllegalArgumentException if the given group name is empty or the given group name already exists
+     * @throws IllegalArgumentException if the given group name is empty/too long or the given group name already exists or the prefix is too long or the color code is not within the range of 0 to 15
      * @throws SQLException if something goes wrong with the database connection
      */
     public void createGroup(String name, String prefix, int level, int colorCode) throws IllegalArgumentException, SQLException {
-        checkForEmptyString(name);
+        checkForEmptyString(name, "name");
         if(existsGroup(name))
             throw new IllegalArgumentException("The given group name does already exist!");
+        if(name.length() > 30)
+            throw new IllegalArgumentException("Group names must only be 30 characters long!");
+        if(name.length() > 10)
+            throw new IllegalArgumentException("Group prefixes must only be 10 characters long!");
+        if(colorCode < 0 || colorCode > 15)
+            throw new IllegalArgumentException("The color codes must be within the range of 0 to 15");
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate("INSERT INTO " + TABLE_GROUPS + "(" + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + ", " + TABLE_GROUPS_ATTRIBUTE_GROUPPREFIX + ", " + TABLE_GROUPS_ATTRIBUTE_GROUPLEVEL + ", " + TABLE_GROUPS_ATTRIBUTE_GROUPCOLORCODE + ") VALUES('" + name + "','" + prefix + "','" + level + "'," + colorCode + ")");
         }
@@ -179,20 +187,23 @@ public class DatabaseManager {
      * Changes the given group's name to the given new name
      * @param group the group's old name
      * @param newName the group's new name
-     * @throws IllegalArgumentException if the given group name is empty or does not exist or the given new name already exists
+     * @throws IllegalArgumentException if the given group name is empty or does not exist or is too long or the given new name already exists
      * @throws SQLException if something goes wrong with the database connection
      */
     public void editGroupName(String group, String newName) throws IllegalArgumentException, SQLException {
-        checkForEmptyString(group);
-        checkForEmptyString(newName);
+        checkForEmptyString(group, "group name");
+        checkForEmptyString(newName, "new name");
         if(!existsGroup(group))
             throw new IllegalArgumentException("The given group does not exist!");
+        if(group.length() > 30)
+            throw new IllegalArgumentException("Group names must only be 30 characters long!");
         if(defaultGroupName.equals(group))
             throw new IllegalArgumentException("The default group must not be renamed!");
         if(existsGroup(newName))
             throw new IllegalArgumentException("The given new group name does already exist!");
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + newName + "' WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
+            statement.executeUpdate("UPDATE " + TABLE_USERS + " SET " + TABLE_USERS_ATTRIBUTE_USERGROUP + " = '" + newName + "' WHERE " + TABLE_USERS_ATTRIBUTE_USERGROUP + " = '" + group + "'");
         }
     }
 
@@ -200,13 +211,15 @@ public class DatabaseManager {
      * Changes the given group's prefix to the given new prefix
      * @param group the group's name
      * @param prefix the group's new prefix
-     * @throws IllegalArgumentException if the given group name is empty or does not exist
+     * @throws IllegalArgumentException if the given group name is empty or does not exist or the prefix is too long
      * @throws SQLException if something goes wrong with the database connection
      */
     public void editGroupPrefix(String group, String prefix) throws IllegalArgumentException, SQLException {
-        checkForEmptyString(group);
+        checkForEmptyString(group, "group name");
         if(!existsGroup(group))
             throw new IllegalArgumentException("The given group does not exist!");
+        if(prefix.length() > 10)
+            throw new IllegalArgumentException("Group prefixes must only be 10 characters long!");
         try(Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPPREFIX + " = '" + prefix + "' WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
         }
@@ -216,13 +229,15 @@ public class DatabaseManager {
      * Changes the given group's color code to the given new color code
      * @param group the group's name
      * @param colorCode the group's new color code
-     * @throws IllegalArgumentException if the given group name is empty or does not exist
+     * @throws IllegalArgumentException if the given group name is empty or does not exist or the color code is not within the range of 0 to 15
      * @throws SQLException if something goes wrong with the database connection
      */
     public void editGroupColorCode(String group, int colorCode) throws IllegalArgumentException, SQLException {
-        checkForEmptyString(group);
+        checkForEmptyString(group, "group name");
         if(!existsGroup(group))
             throw new IllegalArgumentException("The given group does not exist!");
+        if(colorCode < 0 || colorCode > 15)
+            throw new IllegalArgumentException("The color codes must be within the range of 0 to 15");
         try(Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPCOLORCODE + " = " + colorCode + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
         }
@@ -236,7 +251,7 @@ public class DatabaseManager {
      * @throws SQLException if something goes wrong with the database connection
      */
     public void editGroupLevel(String group, int level) throws IllegalArgumentException, SQLException {
-        checkForEmptyString(group);
+        checkForEmptyString(group, "group name");
         if (!existsGroup(group))
             throw new IllegalArgumentException("The given group does not exist!");
         try(Statement statement = connection.createStatement()) {
@@ -252,7 +267,7 @@ public class DatabaseManager {
      * @throws SQLException if something goes wrong with the database connection
      */
     public List<String> getGroupsUsers(String group) throws IllegalArgumentException, SQLException {
-        checkForEmptyString(group);
+        checkForEmptyString(group, "group name");
         if(!existsGroup(group))
             throw new IllegalArgumentException("The given group does not exist!");
         List<String> list = new LinkedList<>();
@@ -272,7 +287,7 @@ public class DatabaseManager {
      * @throws SQLException if something goes wrong with the database connection
      */
     public void removeGroup(String group) throws IllegalArgumentException, SQLException {
-        checkForEmptyString(group);
+        checkForEmptyString(group, "group name");
         if(defaultGroupName.equals(group))
             throw new IllegalArgumentException("The default group must not be deleted");
         if(!existsGroup(group))
@@ -294,10 +309,12 @@ public class DatabaseManager {
      * @throws SQLException if something goes wrong with the database connection
      */
     public void addUserToGroup(String uuid, String group) throws IllegalArgumentException, SQLException {
-        checkForEmptyString(group);
-        checkForEmptyString(uuid);
+        checkForEmptyString(group, "group name");
+        checkForEmptyString(uuid, "uuid");
         if(!existsGroup(group))
             throw new IllegalArgumentException("The given group does not exist!");
+        if(getGroups(uuid).contains(group))
+            throw new IllegalArgumentException("The given user is already member of the given group!");
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate("INSERT INTO " + TABLE_USERS + "(" + TABLE_USERS_ATTRIBUTE_USERUUID + ", " + TABLE_USERS_ATTRIBUTE_USERGROUP + ", " + TABLE_USERS_ATTRIBUTE_EXPIRATIONTIME + ") VALUES('" + uuid + "','" + group + "', NULL)");
         }
@@ -316,8 +333,8 @@ public class DatabaseManager {
      * @throws SQLException if something goes wrong with the database connection
      */
     public void removeUserFromGroup(String uuid, String group) throws IllegalArgumentException, SQLException{
-        checkForEmptyString(uuid);
-        checkForEmptyString(group);
+        checkForEmptyString(uuid, "uuid");
+        checkForEmptyString(group, "group name");
         if(!existsGroup(group))
             throw new IllegalArgumentException("The given group does not exist!");
         if(!getGroups(uuid).contains(group))
@@ -336,7 +353,7 @@ public class DatabaseManager {
      * @throws SQLException if something goes wrong with the database connection
      */
     public List<String> getGroups(String uuid) throws IllegalArgumentException, SQLException {
-        checkForEmptyString(uuid);
+        checkForEmptyString(uuid, "uuid");
         List<String> list = new LinkedList<>();
         try(Statement statement = connection.createStatement()) {
             ResultSet res = statement.executeQuery("SELECT " + TABLE_USERS_ATTRIBUTE_USERGROUP + " FROM " + TABLE_USERS + " WHERE " + TABLE_USERS_ATTRIBUTE_USERUUID + " = '" + uuid + "'");
@@ -348,29 +365,85 @@ public class DatabaseManager {
         return list;
     }
 
-    public int getGroupLevel(String group) {
-        //TODO
-        return 0;
+    /**
+     * Returns the given group's level
+     * @param group the group's name
+     * @return the given group's level
+     * @throws IllegalArgumentException if the given group does not exist or is an empty String
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public int getGroupLevel(String group) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(group, "group name");
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist");
+        try(Statement statement = connection.createStatement()) {
+            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPLEVEL + " FROM " + TABLE_GROUPS + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
+            res.next();
+            return res.getInt(1);
+        }
     }
 
-    public char getGroupColorChar(String group) {
-        //TODO
-        return 'c';
+    /**
+     * Returns the given group's color char
+     * @param group the group's name
+     * @return the given group's color char
+     * @throws IllegalArgumentException if the given group does not exist or is an empty String
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public char getGroupColorChar(String group) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(group, "group name");
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist");
+        int colorCode;
+        try(Statement statement = connection.createStatement()) {
+            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPCOLORCODE + " FROM " + TABLE_GROUPS + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
+            res.next();
+            colorCode = res.getInt(1);
+        }
+        // coloCode -> char
+        return Character.forDigit(colorCode, 16);
     }
 
-    public String getGroupPrefix(String group) {
-        //TODO
-        return "prefix";
+    /**
+     * Returns the given group's prefix
+     * @param group the group's name
+     * @return the given group's prefix
+     * @throws IllegalArgumentException if the given group does not exist or is an empty String
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public String getGroupPrefix(String group) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(group, "group name");
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist");
+        try(Statement statement = connection.createStatement()) {
+            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPPREFIX + " FROM " + TABLE_GROUPS + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
+            res.next();
+            return res.getString(1);
+        }
     }
 
-    public String getUserPrefix(String uuid) {
-        //TODO
-        return "prefix";
+    /**
+     * Returns prefix for the given user - which is equal to the prefix of the group with the highest lvl the user is member of
+     * @param uuid the user's uuid
+     * @return the prefix for the given user
+     * @throws IllegalArgumentException if the given uuid is an empty String or the user is not member of any groups
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public String getUserPrefix(String uuid) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(uuid, "uuid");
+        return getGroupPrefix(getUsersGroupWithHighestLevel(uuid));
     }
 
-    public char getUserColorChar(String uuid) {
-        //TODO
-        return 'c';
+    /**
+     * Returns the color char - which is equal to the color char of the group with the highest lvl the user is member of
+     * @param uuid the user's uuid
+     * @return the color char for the given user
+     * @throws IllegalArgumentException if the given uuid is an empty String or the user is not member of any groups
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public char getUserColorChar(String uuid) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(uuid, "uuid");
+        return getGroupColorChar(getUsersGroupWithHighestLevel(uuid));
     }
 
     /**
@@ -381,8 +454,36 @@ public class DatabaseManager {
         //TODO
     }
 
-    // HELPER
 
+    /**
+     * Returns the time the user has left in that group in seconds
+     * @param uuid the user's uuid
+     * @param group the group's name
+     * @return the time the user has left in that group in seconds
+     * @throws IllegalArgumentException if the given groupname or username is an emty String
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public int groupTimeLeft(String uuid, String group) throws IllegalArgumentException, SQLException {
+        checkForEmptyString(uuid, "uuid");
+        checkForEmptyString(group, "group");
+        if(!getGroups(uuid).contains(group))
+            return 0;
+        //TODO Zeitlimits einfuegen
+        return Integer.MAX_VALUE;
+    }
+
+    public List<String> getAllGroups() throws SQLException {
+        try(Statement statement = connection.createStatement()){
+            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS);
+            List<String> list = new LinkedList<>();
+            while(!res.isClosed() && res.next()) {
+                list.add(res.getString(1));
+            }
+            return list;
+        }
+    }
+
+    // HELPER
     /**
      * Checks whether the given groupname exists or not
      * @param groupname the given groupname
@@ -401,8 +502,34 @@ public class DatabaseManager {
      * @param text the given text
      * @throws IllegalArgumentException if the given text is empty
      */
-    private void checkForEmptyString(String text) throws IllegalArgumentException {
+    private void checkForEmptyString(String text, String variable) throws IllegalArgumentException {
         if(text.equals(""))
-            throw new IllegalArgumentException("The group name must contain at least 1 character!");
+            throw new IllegalArgumentException("The " + variable + " must contain at least 1 character!");
+    }
+
+    /**
+     * Returns the name of the group with the highest level that the given user is member of
+     * @param uuid the user's uuid
+     * @return the name of the group with the highest level that the given user is member of
+     * @throws IllegalArgumentException if the user is not member of a group or the given uuid is an empty String
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    public String getUsersGroupWithHighestLevel(String uuid) throws IllegalArgumentException, SQLException {
+        List<String> groups = getGroups(uuid);
+        if(groups.isEmpty())
+            throw new IllegalArgumentException("The given user is not member of a group!");
+        // get the highest group level:
+        int level = Integer.MIN_VALUE;
+        for(String g : groups) {
+            int glvl = getGroupLevel(g);
+            if(glvl > level)
+                level = glvl;
+        }
+        // pick the first group with that level:
+        for(String g : groups) {
+            if(getGroupLevel(g) == level)
+                return g;
+        }
+        throw new IllegalStateException("Something went wrong while fetching the group with the highest level for user " + uuid + "!");
     }
 }

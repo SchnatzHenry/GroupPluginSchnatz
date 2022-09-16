@@ -1,3 +1,4 @@
+import com.schnatz.groupplugin.DatabaseManager;
 import org.junit.jupiter.api.*;
 
 import java.lang.reflect.Field;
@@ -7,6 +8,10 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * This class is used to test class {@link DatabaseManager}
+ * @author Henry Schnatz
+ */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDatabaseManager {
     Connection connection;
@@ -44,11 +49,10 @@ public class TestDatabaseManager {
 
             try(PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM " + tableGroups)){
                 ResultSet resultSet = preparedStatement.executeQuery();
-                assertTrue(!resultSet.isClosed());
+                assertFalse(resultSet.isClosed());
                 assertTrue(resultSet.next());
-                assertTrue(resultSet.getString(1).equals(defaultGroupName));
-                assertTrue(resultSet.getString(2).equals(defaultGroupPrefix));
-
+                assertEquals(resultSet.getString(1), defaultGroupName);
+                assertEquals(resultSet.getString(2), defaultGroupPrefix);
             }
         });
     }
@@ -76,11 +80,10 @@ public class TestDatabaseManager {
 
             try(PreparedStatement preparedStatement = connection.prepareStatement("SELECT * FROM " + tableGroups)){
                 ResultSet resultSet = preparedStatement.executeQuery();
-                assertTrue(!resultSet.isClosed());
+                assertFalse(resultSet.isClosed());
                 assertTrue(resultSet.next());
-                assertTrue(resultSet.getString(1).equals(defaultGroupName));
-                assertTrue(resultSet.getString(2).equals(defaultGroupPrefix));
-
+                assertEquals(resultSet.getString(1), defaultGroupName);
+                assertEquals(resultSet.getString(2), defaultGroupPrefix);
             }
         });
     }
@@ -109,12 +112,12 @@ public class TestDatabaseManager {
             try(PreparedStatement preparedStatement = connection.prepareStatement("SELECT groupname,groupprefix, grouplevel, groupcolorcode FROM " + tableGroups + " WHERE groupname = ?")){
                 preparedStatement.setString(1, "Group1");
                 ResultSet resultSet = preparedStatement.executeQuery();
-                assertTrue(!resultSet.isClosed());
+                assertFalse(resultSet.isClosed());
                 assertTrue(resultSet.next());
-                assertTrue(resultSet.getString(1).equals("Group1"));
-                assertTrue(resultSet.getString(2).equals("Pref1"));
-                assertTrue(resultSet.getInt(3) == 1);
-                assertTrue(resultSet.getInt(4) == 15);
+                assertEquals(resultSet.getString(1), "Group1");
+                assertEquals(resultSet.getString(2), "Pref1");
+                assertEquals(resultSet.getInt(3), 1);
+                assertEquals(resultSet.getInt(4), 15);
             }
         });
     }
@@ -131,13 +134,18 @@ public class TestDatabaseManager {
     }
 
     /**
-     * Tests the {@link DatabaseManager#createGroup(String, String, int, int)} method with empty group name
+     * Tests the {@link DatabaseManager#createGroup(String, String, int, int)} method with illegal arguments
      */
     @Test
-    @DisplayName("createGroup() - empty group name")
+    @DisplayName("createGroup() - illegal arguments")
     void testCreateGroup3() {
         testCreateGroup1();
         assertThrows(IllegalArgumentException.class, () -> dbManager.createGroup("", "Pref1", 1, 15));
+        assertThrows(IllegalArgumentException.class, () -> dbManager.createGroup("Group2", "Pref2", 1, 16));
+        assertThrows(IllegalArgumentException.class, () -> dbManager.createGroup("Group3", "Pref3", 1, -1));
+        assertDoesNotThrow(() -> dbManager.createGroup("Group4", "Pref4", 1, 0));
+        assertDoesNotThrow(() -> dbManager.createGroup("Group5", "Pref5", 1, 15));
+        assertThrows(IllegalArgumentException.class, () -> dbManager.createGroup("TOOOOOOOOOOOOOOOOOOOOOOOOOOLONG", "TOOOOOOLONG", 1, 13));
     }
 
     /**
@@ -148,8 +156,28 @@ public class TestDatabaseManager {
     void testEditGroupName1() {
         dbManager = assertDoesNotThrow(() -> new DatabaseManager("localhost", 3306, "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4", "ServerGroupTest", "DefaultGroup", "defPrefix", 0, 3));
         connection = assertDoesNotThrow(() -> DriverManager.getConnection("jdbc:mysql://localhost:3306/ServerGroupTest", "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4"));
-        testCreateGroup1();
+        testAddUserToGroup1();
         assertDoesNotThrow(() -> dbManager.editGroupName("Group1", "Group1Renamed"));
+        assertDoesNotThrow(() -> {
+            try(PreparedStatement preparedStatement = connection.prepareStatement("SELECT groupname FROM servergroup WHERE groupname = 'Group1Renamed'")){
+                ResultSet res = preparedStatement.executeQuery();
+                assertTrue(res.next());
+                assertEquals(res.getString(1), "Group1Renamed");
+            }
+        });
+        assertDoesNotThrow(() -> {
+            try(PreparedStatement preparedStatement = connection.prepareStatement("SELECT useruuid FROM users WHERE groupname = 'Group1Renamed'")){
+                ResultSet res = preparedStatement.executeQuery();
+                List<String> actualUUIDs = new LinkedList<>();
+                while(res.next()){
+                    actualUUIDs.add(res.getString(1));
+                }
+                assertEquals(actualUUIDs.size(), 3);
+                assertTrue(actualUUIDs.contains("useruuid4"));
+                assertTrue(actualUUIDs.contains("useruuid5"));
+                assertTrue(actualUUIDs.contains("useruuid6"));
+            }
+        });
     }
 
     /**
@@ -164,16 +192,17 @@ public class TestDatabaseManager {
     }
 
     /**
-     * Tests the {@link DatabaseManager#editGroupName(String, String)} method with empty String parameters
+     * Tests the {@link DatabaseManager#editGroupName(String, String)} method with illegal arguments
      */
     @Test
-    @DisplayName("editGroupName() - empty Strings")
+    @DisplayName("editGroupName() - illegal arguments")
     void testEditGroupName3() {
         dbManager = assertDoesNotThrow(() -> new DatabaseManager("localhost", 3306, "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4", "ServerGroupTest", "DefaultGroup", "defPrefix", 0, 3));
         connection = assertDoesNotThrow(() -> DriverManager.getConnection("jdbc:mysql://localhost:3306/ServerGroupTest", "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4"));
         assertThrows(IllegalArgumentException.class, () -> dbManager.editGroupName("", "newName"));
         assertThrows(IllegalArgumentException.class, () -> dbManager.editGroupName("", ""));
         assertThrows(IllegalArgumentException.class, () -> dbManager.editGroupName("oldName", ""));
+        assertThrows(IllegalArgumentException.class, () -> dbManager.editGroupName("Group1", "TOOOOOOOOOOOOOOOOOOOOOOOOOOLONG"));
     }
 
     /**
@@ -205,7 +234,7 @@ public class TestDatabaseManager {
                 preparedStatement.setString(1, "Group1");
                 ResultSet res = preparedStatement.executeQuery();
                 assertTrue(res.next());
-                assertTrue(res.getString(1).equals("newPrefix"));
+                assertEquals(res.getString(1), "newPrefix");
             }
         });
     }
@@ -222,14 +251,15 @@ public class TestDatabaseManager {
     }
 
     /**
-     * Tests the {@link DatabaseManager#editGroupPrefix(String, String)} method with an empty groupname
+     * Tests the {@link DatabaseManager#editGroupPrefix(String, String)} method with illegal arguments
      */
     @Test
-    @DisplayName("editGroupPrefix() - empty groupname")
+    @DisplayName("editGroupPrefix() - illegal arguments")
     void testEditGroupPrefix3() {
         dbManager = assertDoesNotThrow(() -> new DatabaseManager("localhost", 3306, "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4", "ServerGroupTest", "DefaultGroup", "defPrefix", 0, 3));
         connection = assertDoesNotThrow(() -> DriverManager.getConnection("jdbc:mysql://localhost:3306/ServerGroupTest", "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4"));
         assertThrows(IllegalArgumentException.class, () -> dbManager.editGroupPrefix("", "newPrefix"));
+        assertThrows(IllegalArgumentException.class, () -> dbManager.editGroupPrefix("Group1", "TOOOOOOLONG"));
     }
 
     /**
@@ -241,7 +271,7 @@ public class TestDatabaseManager {
         testCreateGroup1();
         dbManager = assertDoesNotThrow(() -> new DatabaseManager("localhost", 3306, "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4", "ServerGroupTest", "DefaultGroup", "defPrefix", 0, 3));
         connection = assertDoesNotThrow(() -> DriverManager.getConnection("jdbc:mysql://localhost:3306/ServerGroupTest", "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4"));
-        assertDoesNotThrow(() -> dbManager.editGroupColorCode("Group1", -1));
+        assertDoesNotThrow(() -> dbManager.editGroupColorCode("Group1", 10));
         assertDoesNotThrow(() -> {
             Field tableGroupsField = dbManager.getClass().getDeclaredField("TABLE_GROUPS");
             tableGroupsField.setAccessible(true);
@@ -250,7 +280,7 @@ public class TestDatabaseManager {
                 preparedStatement.setString(1, "Group1");
                 ResultSet res = preparedStatement.executeQuery();
                 assertTrue(res.next());
-                assertTrue(res.getInt(1) == -1);
+                assertEquals(res.getInt(1), 10);
             }
         });
     }
@@ -267,14 +297,19 @@ public class TestDatabaseManager {
     }
 
     /**
-     * Tests the {@link DatabaseManager#editGroupColorCode(String, int)} method with an empty groupname
+     * Tests the {@link DatabaseManager#editGroupColorCode(String, int)} method with illegal arguments
      */
     @Test
-    @DisplayName("editGroupColorCode() - empty groupname")
+    @DisplayName("editGroupColorCode() - illegal arguments")
     void testEditGroupColorCode3() {
         dbManager = assertDoesNotThrow(() -> new DatabaseManager("localhost", 3306, "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4", "ServerGroupTest", "DefaultGroup", "defPrefix", 0, 3));
         connection = assertDoesNotThrow(() -> DriverManager.getConnection("jdbc:mysql://localhost:3306/ServerGroupTest", "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4"));
-        assertThrows(IllegalArgumentException.class, () -> dbManager.editGroupColorCode("", -1));
+        testCreateGroup1();
+        assertThrows(IllegalArgumentException.class, () -> dbManager.editGroupColorCode("", 13));
+        assertThrows(IllegalArgumentException.class, () -> dbManager.editGroupColorCode("Group1", -1));
+        assertThrows(IllegalArgumentException.class, () -> dbManager.editGroupColorCode("Group1", 16));
+        assertDoesNotThrow(() -> dbManager.editGroupColorCode("Group1", 0));
+        assertDoesNotThrow(() -> dbManager.editGroupColorCode("Group1", 15));
     }
 
     /**
@@ -295,7 +330,7 @@ public class TestDatabaseManager {
                 preparedStatement.setString(1, "Group1");
                 ResultSet res = preparedStatement.executeQuery();
                 assertTrue(res.next());
-                assertTrue(res.getInt(1) == -1);
+                assertEquals(res.getInt(1), -1);
             }
         });
     }
@@ -344,9 +379,9 @@ public class TestDatabaseManager {
         List<String> actualUsersGroup1 = assertDoesNotThrow(() -> dbManager.getGroupsUsers("Group1"));
         List<String> actualUsersGroup2 = assertDoesNotThrow(() -> dbManager.getGroupsUsers("Group2"));
         List<String> actualUsersGroup3 = assertDoesNotThrow(() -> dbManager.getGroupsUsers("Group3"));
-        assertTrue(actualUsersGroup1.size() == 3);
+        assertEquals(actualUsersGroup1.size(), 3);
         expectedUsersGroup1.forEach(u -> assertTrue(actualUsersGroup1.contains(u)));
-        assertTrue(actualUsersGroup2.size() == 1);
+        assertEquals(actualUsersGroup2.size(), 1);
         expectedUsersGroup2.forEach(u -> assertTrue(actualUsersGroup2.contains(u)));
         assertTrue(actualUsersGroup3.isEmpty());
     }
@@ -405,15 +440,15 @@ public class TestDatabaseManager {
 
                assertTrue(remainingUsers.contains(res.getString(1)));
                remainingUsers.remove(res.getString(1));
-               assertTrue(res.getObject(2) == null);
+               assertNull(res.getObject(2));
                assertTrue(res.next());
                assertTrue(remainingUsers.contains(res.getString(1)));
                remainingUsers.remove(res.getString(1));
-               assertTrue(res.getObject(2) == null);
+               assertNull(res.getObject(2));
                assertTrue(res.next());
                assertTrue(remainingUsers.contains(res.getString(1)));
                remainingUsers.remove(res.getString(1));
-               assertTrue(res.getObject(2) == null);
+               assertNull(res.getObject(2));
                assertFalse(res.next());
            }
         });
@@ -453,7 +488,7 @@ public class TestDatabaseManager {
     @DisplayName("addUserToGroup() - limited - existing group")
     void testAddUserToGroup4() {
         //TODO
-        assertTrue(false);
+        fail();
     }
 
     /**
@@ -463,17 +498,17 @@ public class TestDatabaseManager {
     @DisplayName("addUserToGroup() - limited - non-existing group")
     void testAddUserToGroup5() {
         //TODO
-        assertTrue(false);
+        fail();
     }
 
     /**
      * Tests the {@link DatabaseManager#addUserToGroup(String, String, int, int, int)} method with an empty groupname and/or uuid
      */
     @Test
-    @DisplayName("addUserToGroup() - limited - empty groupname and/or uuidp")
+    @DisplayName("addUserToGroup() - limited - empty groupname and/or uuid")
     void testAddUserToGroup6() {
         //TODO
-        assertTrue(false);
+        fail();
     }
 
     /**
@@ -526,17 +561,17 @@ public class TestDatabaseManager {
         connection = assertDoesNotThrow(() -> DriverManager.getConnection("jdbc:mysql://localhost:3306/ServerGroupTest", "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4"));
         assertDoesNotThrow(() -> {
             List<String> actualUser4 = dbManager.getGroups("useruuid4");
-            assertTrue(actualUser4.size() == 1);
+            assertEquals(actualUser4.size(), 1);
             assertTrue(actualUser4.contains("Group1"));
             dbManager.createGroup("Group2", "g2pref", 0 , 0);
             dbManager.addUserToGroup("useruuid4", "Group2");
             actualUser4 = dbManager.getGroups("useruuid4");
-            assertTrue(actualUser4.size() == 2);
+            assertEquals(actualUser4.size(), 2);
             assertTrue(actualUser4.contains("Group1"));
             assertTrue(actualUser4.contains("Group2"));
             dbManager.removeUserFromGroup("useruuid4", "Group1");
             actualUser4 = dbManager.getGroups("useruuid4");
-            assertTrue(actualUser4.size() == 1);
+            assertEquals(actualUser4.size(), 1);
             assertTrue(actualUser4.contains("Group2"));
             dbManager.removeUserFromGroup("useruuid4", "Group2");
             actualUser4 = dbManager.getGroups("useruuid4");
@@ -570,6 +605,88 @@ public class TestDatabaseManager {
             assertFalse(dbManager.getGroups("useruuid6").contains("Group1"));
         });
         assertThrows(IllegalArgumentException.class, () -> dbManager.addUserToGroup("useruuid1", "Group1"));
+    }
+
+    /**
+     * Tests the {@link DatabaseManager#getGroupLevel(String)} method
+     */
+    @Test
+    @DisplayName("getGroupLevel()")
+    void testGetGroupLevel() {
+        testCreateGroup1();
+        dbManager = assertDoesNotThrow(() -> new DatabaseManager("localhost", 3306, "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4", "ServerGroupTest", "DefaultGroup", "defPrefix", 0, 3));
+        connection = assertDoesNotThrow(() -> DriverManager.getConnection("jdbc:mysql://localhost:3306/ServerGroupTest", "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4"));
+        assertDoesNotThrow(() -> {
+            assertEquals(dbManager.getGroupLevel("Group1"), 1);
+            dbManager.editGroupLevel("Group1", 20);
+            assertEquals(dbManager.getGroupLevel("Group1"), 20);
+        });
+        assertThrows(IllegalArgumentException.class, () -> dbManager.getGroupLevel(""));
+        assertThrows(IllegalArgumentException.class, () -> dbManager.getGroupLevel("Group2"));
+    }
+
+    /**
+     * Tests the {@link DatabaseManager#getGroupColorChar(String)} method
+     */
+    @Test
+    @DisplayName("getGroupColorChar()")
+    void testGetGroupColorChar() {
+        testCreateGroup1();
+        dbManager = assertDoesNotThrow(() -> new DatabaseManager("localhost", 3306, "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4", "ServerGroupTest", "DefaultGroup", "defPrefix", 0, 3));
+        connection = assertDoesNotThrow(() -> DriverManager.getConnection("jdbc:mysql://localhost:3306/ServerGroupTest", "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4"));
+        assertDoesNotThrow(() -> {
+            assertEquals(dbManager.getGroupColorChar("Group1"), 'f');
+            dbManager.editGroupColorCode("Group1", 14);
+            assertEquals(dbManager.getGroupColorChar("Group1"), 'e');
+            dbManager.editGroupColorCode("Group1", 13);
+            assertEquals(dbManager.getGroupColorChar("Group1"), 'd');
+            dbManager.editGroupColorCode("Group1", 12);
+            assertEquals(dbManager.getGroupColorChar("Group1"), 'c');
+            dbManager.editGroupColorCode("Group1", 11);
+            assertEquals(dbManager.getGroupColorChar("Group1"), 'b');
+            dbManager.editGroupColorCode("Group1", 10);
+            assertEquals(dbManager.getGroupColorChar("Group1"), 'a');
+            dbManager.editGroupColorCode("Group1", 9);
+            assertEquals(dbManager.getGroupColorChar("Group1"), '9');
+            dbManager.editGroupColorCode("Group1", 8);
+            assertEquals(dbManager.getGroupColorChar("Group1"), '8');
+            dbManager.editGroupColorCode("Group1", 7);
+            assertEquals(dbManager.getGroupColorChar("Group1"), '7');
+            dbManager.editGroupColorCode("Group1", 6);
+            assertEquals(dbManager.getGroupColorChar("Group1"), '6');
+            dbManager.editGroupColorCode("Group1", 5);
+            assertEquals(dbManager.getGroupColorChar("Group1"), '5');
+            dbManager.editGroupColorCode("Group1", 4);
+            assertEquals(dbManager.getGroupColorChar("Group1"), '4');
+            dbManager.editGroupColorCode("Group1", 3);
+            assertEquals(dbManager.getGroupColorChar("Group1"), '3');
+            dbManager.editGroupColorCode("Group1", 2);
+            assertEquals(dbManager.getGroupColorChar("Group1"), '2');
+            dbManager.editGroupColorCode("Group1", 1);
+            assertEquals(dbManager.getGroupColorChar("Group1"), '1');
+            dbManager.editGroupColorCode("Group1", 0);
+            assertEquals(dbManager.getGroupColorChar("Group1"), '0');
+        });
+        assertThrows(IllegalArgumentException.class, () -> dbManager.getGroupColorChar(""));
+        assertThrows(IllegalArgumentException.class, () -> dbManager.getGroupColorChar("Group2"));
+    }
+
+    /**
+     * Tests the {@link DatabaseManager#getGroupPrefix(String)} method
+     */
+    @Test
+    @DisplayName("getGroupPrefix()")
+    void testGetGroupPrefix() {
+        testCreateGroup1();
+        dbManager = assertDoesNotThrow(() -> new DatabaseManager("localhost", 3306, "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4", "ServerGroupTest", "DefaultGroup", "defPrefix", 0, 3));
+        connection = assertDoesNotThrow(() -> DriverManager.getConnection("jdbc:mysql://localhost:3306/ServerGroupTest", "root", "Y#rJj1R-vojdE#i:9A:E!w1bt8_^fEP:E01=cN9M~PX2k2mE.z9om>Hz4@^-~uK4"));
+        assertDoesNotThrow(() -> {
+            assertEquals(dbManager.getGroupPrefix("Group1"), "Pref1");
+            dbManager.editGroupPrefix("Group1", "testPref");
+            assertEquals(dbManager.getGroupPrefix("Group1"), "testPref");
+        });
+        assertThrows(IllegalArgumentException.class, () -> dbManager.getGroupLevel(""));
+        assertThrows(IllegalArgumentException.class, () -> dbManager.getGroupLevel("Group2"));
     }
 
     @AfterAll

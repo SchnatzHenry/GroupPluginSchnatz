@@ -1,4 +1,5 @@
-import org.bukkit.configuration.file.FileConfiguration;
+package com.schnatz.groupplugin;
+
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -60,7 +61,11 @@ public class GroupListener implements Listener {
         Player player = e.getPlayer();
         String message = e.getMessage();
         String format = messageChat;
-        format = replacePlaceMaker(format, player);
+        try {
+            format = replacePlaceMaker(format, player);
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
         format = format.replace("%message%", message);
         e.setFormat(format);
     }
@@ -85,7 +90,11 @@ public class GroupListener implements Listener {
         }
 
         String joinMessage = messageServerJoin;
-        joinMessage = replacePlaceMaker(joinMessage, player);
+        try {
+            joinMessage = replacePlaceMaker(joinMessage, player);
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
         e.setJoinMessage(joinMessage);
     }
 
@@ -97,7 +106,11 @@ public class GroupListener implements Listener {
     public void onQuit(PlayerQuitEvent e) {
         Player player = e.getPlayer();
         String quitMessage = messageServerLeave;
-        quitMessage = replacePlaceMaker(quitMessage, player);
+        try {
+            quitMessage = replacePlaceMaker(quitMessage, player);
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
         e.setQuitMessage(quitMessage);
     }
 
@@ -107,7 +120,7 @@ public class GroupListener implements Listener {
      * @param player the player determining the values for the place-makers
      * @return the text with all place-makers replaced by the desired values
      */
-    private String replacePlaceMaker(String text, Player player){
+    private String replacePlaceMaker(String text, Player player) throws SQLException {
         text = text.replace("%name%", player.getName());
         text = text.replace("%prefix%", databaseManager.getUserPrefix(player.getUniqueId().toString()));
         text = text.replace("%color%", String.valueOf(databaseManager.getUserColorChar(player.getUniqueId().toString())));

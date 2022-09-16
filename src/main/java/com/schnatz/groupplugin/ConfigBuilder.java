@@ -1,3 +1,5 @@
+package com.schnatz.groupplugin;
+
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
