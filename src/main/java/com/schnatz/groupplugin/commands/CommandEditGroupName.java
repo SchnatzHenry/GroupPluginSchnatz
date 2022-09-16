@@ -103,7 +103,7 @@ public class CommandEditGroupName  extends DatabaseCommand {
 
     /**
      * Tries to edit the name of the group with the given name to the given new name. Send an error message to the sender if editing the group's name goes wrong
-     * @param sender the person trying to delete the group
+     * @param sender the person trying to edit the group's name
      * @param oldName the group's old name
      * @param newName the group's new name
      */

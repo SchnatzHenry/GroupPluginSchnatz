@@ -9,11 +9,7 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * This command can be used to edit a group's prefix
- * @author Henry Schnatz
- */
-public class CommandEditGroupPrefix extends DatabaseCommand {
+public class CommandEditGroupColorCode extends DatabaseCommand {
     /**
      * The message the sender gets displayed when he has insufficient permission to perform the command
      */
@@ -27,17 +23,17 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
      */
     private final String sqlErrorMessage;
     /**
-     * The message that gets displayed when the prefix was edited successfully
+     * The message that gets displayed when the color code was edited successfully
      */
-    private final String groupPrefixEditedMessage;
-    /**
-     * The message that gets displayed when the given prefix is too long
-     */
-    private final String newGroupPrefixTooLongMessage;
+    private final String groupColorCodeEditedMessage;
     /**
      * The message that gets displayed when there is no group with the given name
      */
     private final String groupNameDoesNotExistMessage;
+    /**
+     * The message that gets displayed when the given color code is invalid
+     */
+    private final String invalidColorCodeMessage;
 
     /**
      * Initialising the missing constants with the given values
@@ -45,15 +41,15 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
      * @param databaseManager the database manager
      * @param config          the config
      */
-    public CommandEditGroupPrefix(DatabaseManager databaseManager, FileConfiguration config) {
+    public CommandEditGroupColorCode(DatabaseManager databaseManager, FileConfiguration config) {
         super(databaseManager, config);
-        //TODO init Strings
+        // TODO init Strings
         this.insufficientPermissionMessage = "You have insufficient permission to use this command!";
-        this.usageMessage = "Please use as following: /editgroupprefix <groupname> <newprefix>";
+        this.usageMessage = "Please use as following: /editgroupcolorcode <groupname> <newpcolorcode>";
         this.sqlErrorMessage = "Something went wrong internally, please try again later!";
-        this.groupPrefixEditedMessage = "Changed the prefix of group %group% to %newprefix%!";
-        this.newGroupPrefixTooLongMessage = "Prefixes must not be longer than 10 characters!";
+        this.groupColorCodeEditedMessage = "Changed the color code of group %group% to %newcolorcode%!";
         this.groupNameDoesNotExistMessage = "There is no group with the given name!";
+        this.invalidColorCodeMessage = "The given color code is invalid, please do only use the following 0-9 and a-f!";
     }
 
     /**
@@ -69,7 +65,19 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
             sender.sendMessage(usageMessage);
             return true;
         }
-        editGroupPrefix(sender, args[0], args[1]);
+        if(args[1].length() != 1) {
+            sender.sendMessage(invalidColorCodeMessage);
+            return true;
+        }
+        char colorCodeChar = args[1].charAt(0);
+        int colorCode;
+        try{
+            colorCode = colorCodeCharToInt(colorCodeChar);
+        } catch (IllegalArgumentException e) {
+            sender.sendMessage(invalidColorCodeMessage);
+            return true;
+        }
+        editGroupPrefix(sender, args[0], colorCode);
         return true;
     }
 
@@ -92,15 +100,15 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
     // HELPER
 
     /**
-     * Tries to edit the prefix of the group with the given name. Send an error message to the sender if editing the prefix goes wrong
-     * @param sender the person trying to edit the group's prefix
+     * Tries to edit the color code of the group with the given name. Send an error message to the sender if editing the color code goes wrong
+     * @param sender the person trying to edit the group's color code
      * @param group the group's name
-     * @param newPrefix the group's new prefix
+     * @param newColorCode the group's new color code
      */
-    private void editGroupPrefix(CommandSender sender, String group, String newPrefix) {
+    private void editGroupPrefix(CommandSender sender, String group, int newColorCode) {
         try {
-            databaseManager.editGroupPrefix(group, newPrefix);
-            sender.sendMessage(groupPrefixEditedMessage.replace("%group%", group).replace("%newprefix%", newPrefix));
+            databaseManager.editGroupColorCode(group, newColorCode);
+            sender.sendMessage(groupColorCodeEditedMessage.replace("%group%", group).replace("%newcolorcode%", String.valueOf(newColorCode)));
         } catch (SQLException e) {
             sender.sendMessage(sqlErrorMessage);
         } catch (IllegalArgumentException e) {
@@ -115,9 +123,21 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
      */
     private String getErrorMessage(Exception e) {
         return switch (e.getMessage()) {
-            case "Group prefixes must only be 10 characters long!" -> newGroupPrefixTooLongMessage;
             case "The given group does not exist!" -> groupNameDoesNotExistMessage;
             default -> "Something went wrong!";
         };
+    }
+
+    /**
+     * Returns the integer representation of the given color code character
+     * @param colorCodeChar the given character
+     * @return the integer representation of the given color code character
+     * @throws IllegalArgumentException if the given character is not in range of 0-9 or a-f
+     */
+    private int colorCodeCharToInt(char colorCodeChar) throws IllegalArgumentException {
+        int colorCode = Character.digit(colorCodeChar, 16);
+        if(colorCode < 0)
+            throw new IllegalArgumentException("Only the following characters are allowed: 0-9 and a-f");
+        return colorCode;
     }
 }

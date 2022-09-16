@@ -112,7 +112,6 @@ public class CommandCreateGroup extends DatabaseCommand {
             return true;
         }
         int level;
-        char colorCodeChar;
         try{
             level = Integer.parseInt(args[2]);
         } catch (NumberFormatException e) {
@@ -123,7 +122,7 @@ public class CommandCreateGroup extends DatabaseCommand {
             sender.sendMessage(invalidColorCodeMessage);
             return true;
         }
-        colorCodeChar = args[3].charAt(0);
+        char colorCodeChar = args[3].charAt(0);
         int colorCode;
         try{
             colorCode = colorCodeCharToInt(colorCodeChar);

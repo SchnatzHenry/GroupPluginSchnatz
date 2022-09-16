@@ -26,7 +26,7 @@ import java.sql.SQLException;
 @Permission(name = "sign", desc = "Permission to summon an information sign", defaultValue = PermissionDefault.NOT_OP)
 @Command(name = "sign", desc = "Allows to summon an information sign")
 @Permission(name = "groupplugin.*", desc = "Wildcard groupplugin permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "groupplugin.*", desc = "Wildcard groupplugin permission", defaultValue = PermissionDefault.OP, children = {@ChildPermission(name = "groupplugin.creategroup"), @ChildPermission(name = "groupplugin.deletegroup"), @ChildPermission(name = "groupplugin.getgroups"), @ChildPermission(name = "groupplugin.editgroupname"), @ChildPermission(name = "groupplugin.editgroupprefix")})
+@Permission(name = "groupplugin.*", desc = "Wildcard groupplugin permission", defaultValue = PermissionDefault.OP, children = {@ChildPermission(name = "groupplugin.creategroup"), @ChildPermission(name = "groupplugin.deletegroup"), @ChildPermission(name = "groupplugin.getgroups"), @ChildPermission(name = "groupplugin.editgroupname"), @ChildPermission(name = "groupplugin.editgroupprefix"), @ChildPermission(name = "groupplugin.editgrouplevel"), @ChildPermission(name = "groupplugin.editgroupcolorcode")})
 @Permission(name = "groupplugin.creategroup", desc = "Permission to create groups", defaultValue = PermissionDefault.OP)
 @Command(name = "creategroup", desc = "Allows to create groups")
 @Permission(name = "groupplugin.deletegroup", desc = "Permission to create groups", defaultValue = PermissionDefault.OP)
@@ -37,6 +37,10 @@ import java.sql.SQLException;
 @Command(name = "editgroupname", desc = "Allows to edit a group's name")
 @Permission(name = "groupplugin.editgroupprefix", desc = "Permission to edit group prefixes", defaultValue =  PermissionDefault.OP)
 @Command(name = "editgroupprefix", desc = "Allows to edit a group's prefix")
+@Permission(name = "groupplugin.editgrouplevel", desc = "Permission to edit group levels", defaultValue =  PermissionDefault.OP)
+@Command(name = "editgrouplevel", desc = "Allows to edit a group's level")
+@Permission(name = "groupplugin.editgroupcolorcode", desc = "Permission to edit group color codes", defaultValue =  PermissionDefault.OP)
+@Command(name = "editgroupcolorcode", desc = "Allows to edit a group's color code")
 public class Main extends JavaPlugin {
     private DatabaseManager databaseManager;
 
@@ -96,6 +100,12 @@ public class Main extends JavaPlugin {
         CommandEditGroupPrefix commandEditGroupPrefix = new CommandEditGroupPrefix(databaseManager, config);
         this.getCommand("editgroupprefix").setExecutor(commandEditGroupPrefix);
         this.getCommand("editgroupprefix").setTabCompleter(commandEditGroupPrefix);
+        CommandEditGroupLevel commandEditGroupLevel = new CommandEditGroupLevel(databaseManager,config);
+        this.getCommand("editgrouplevel").setExecutor(commandEditGroupLevel);
+        this.getCommand("editgrouplevel").setTabCompleter(commandEditGroupLevel);
+        CommandEditGroupColorCode commandEditGroupColorCode = new CommandEditGroupColorCode(databaseManager, config);
+        this.getCommand("editgroupcolorcode").setExecutor(commandEditGroupColorCode);
+        this.getCommand("editgroupcolorcode").setTabCompleter(commandEditGroupColorCode);
     }
 
     @Override

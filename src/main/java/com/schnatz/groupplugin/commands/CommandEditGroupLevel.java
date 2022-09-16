@@ -9,11 +9,7 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
-/**
- * This command can be used to edit a group's prefix
- * @author Henry Schnatz
- */
-public class CommandEditGroupPrefix extends DatabaseCommand {
+public class CommandEditGroupLevel extends DatabaseCommand {
     /**
      * The message the sender gets displayed when he has insufficient permission to perform the command
      */
@@ -27,17 +23,17 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
      */
     private final String sqlErrorMessage;
     /**
-     * The message that gets displayed when the prefix was edited successfully
+     * The message that gets displayed when the level was edited successfully
      */
-    private final String groupPrefixEditedMessage;
-    /**
-     * The message that gets displayed when the given prefix is too long
-     */
-    private final String newGroupPrefixTooLongMessage;
+    private final String groupLevelEditedMessage;
     /**
      * The message that gets displayed when there is no group with the given name
      */
     private final String groupNameDoesNotExistMessage;
+    /**
+     * The message that gets displayed when the given level is not an integer
+     */
+    private final String levelMustBeIntegerMessage;
 
     /**
      * Initialising the missing constants with the given values
@@ -45,15 +41,15 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
      * @param databaseManager the database manager
      * @param config          the config
      */
-    public CommandEditGroupPrefix(DatabaseManager databaseManager, FileConfiguration config) {
+    public CommandEditGroupLevel(DatabaseManager databaseManager, FileConfiguration config) {
         super(databaseManager, config);
-        //TODO init Strings
+        // TODO init Strings
         this.insufficientPermissionMessage = "You have insufficient permission to use this command!";
-        this.usageMessage = "Please use as following: /editgroupprefix <groupname> <newprefix>";
+        this.usageMessage = "Please use as following: /editgrouplevel <groupname> <newlevel>";
         this.sqlErrorMessage = "Something went wrong internally, please try again later!";
-        this.groupPrefixEditedMessage = "Changed the prefix of group %group% to %newprefix%!";
-        this.newGroupPrefixTooLongMessage = "Prefixes must not be longer than 10 characters!";
+        this.groupLevelEditedMessage = "Changed the level of group %group% to %newlevel%!";
         this.groupNameDoesNotExistMessage = "There is no group with the given name!";
+        this.levelMustBeIntegerMessage = "The given level must be an integer!";
     }
 
     /**
@@ -61,7 +57,7 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
      */
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission("groupplugin.editgroupprefix")) {
+        if (!sender.hasPermission("groupplugin.editgrouplevel")) {
             sender.sendMessage(insufficientPermissionMessage);
             return true;
         }
@@ -69,7 +65,14 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
             sender.sendMessage(usageMessage);
             return true;
         }
-        editGroupPrefix(sender, args[0], args[1]);
+        int newLevel;
+        try {
+            newLevel = Integer.valueOf(args[1]);
+        } catch(NumberFormatException e) {
+            sender.sendMessage(levelMustBeIntegerMessage);
+            return true;
+        }
+        editGroupLevel(sender, args[0], newLevel);
         return true;
     }
 
@@ -92,15 +95,15 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
     // HELPER
 
     /**
-     * Tries to edit the prefix of the group with the given name. Send an error message to the sender if editing the prefix goes wrong
-     * @param sender the person trying to edit the group's prefix
+     * Tries to edit the level of the group with the given name. Send an error message to the sender if editing the level goes wrong
+     * @param sender the person trying to edit the group's level
      * @param group the group's name
-     * @param newPrefix the group's new prefix
+     * @param newLevel the group's new level
      */
-    private void editGroupPrefix(CommandSender sender, String group, String newPrefix) {
+    private void editGroupLevel(CommandSender sender, String group, int newLevel) {
         try {
-            databaseManager.editGroupPrefix(group, newPrefix);
-            sender.sendMessage(groupPrefixEditedMessage.replace("%group%", group).replace("%newprefix%", newPrefix));
+            databaseManager.editGroupLevel(group, newLevel);
+            sender.sendMessage(groupLevelEditedMessage.replace("%group%", group).replace("%newlevel%", String.valueOf(newLevel)));
         } catch (SQLException e) {
             sender.sendMessage(sqlErrorMessage);
         } catch (IllegalArgumentException e) {
@@ -115,7 +118,6 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
      */
     private String getErrorMessage(Exception e) {
         return switch (e.getMessage()) {
-            case "Group prefixes must only be 10 characters long!" -> newGroupPrefixTooLongMessage;
             case "The given group does not exist!" -> groupNameDoesNotExistMessage;
             default -> "Something went wrong!";
         };
