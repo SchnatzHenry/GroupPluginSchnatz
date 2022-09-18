@@ -15,6 +15,7 @@ import java.util.UUID;
 
 /**
  * This command can be used to request information about a group
+ * @author Henry Schnatz
  */
 public class CommandGroupInfo extends DatabaseCommand {
     /**

@@ -5,23 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a1b88b6d-4934-47fc-84f6-d387b3dd169b" name="Changes" comment="final version">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandAddUserToGroup.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandGroupInfo.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandRemoveUserFromGroup.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/ConfigBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/ConfigBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/DatabaseManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/DatabaseManager.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandCreateGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandCreateGroup.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandDeleteGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandDeleteGroup.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandEditGroupColorCode.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandEditGroupColorCode.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandEditGroupLevel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandEditGroupLevel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandEditGroupName.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandEditGroupName.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandEditGroupPrefix.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandEditGroupPrefix.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandGetGroups.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandGetGroups.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandSign.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandSign.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/TestDatabaseManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/TestDatabaseManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandAddUserToGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandAddUserToGroup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandGroupInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandGroupInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandRemoveUserFromGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/schnatz/groupplugin/commands/CommandRemoveUserFromGroup.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -243,7 +231,7 @@
       <workItem from="1663328201711" duration="4786000" />
       <workItem from="1663348136060" duration="4647000" />
       <workItem from="1663407215860" duration="5493000" />
-      <workItem from="1663496482110" duration="29666000" />
+      <workItem from="1663496482110" duration="31060000" />
     </task>
     <task id="LOCAL-00001" summary="-">
       <created>1663105171477</created>
@@ -273,7 +261,14 @@
       <option name="project" value="LOCAL" />
       <updated>1663371179587</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="final version">
+      <created>1663529617724</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1663529617724</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

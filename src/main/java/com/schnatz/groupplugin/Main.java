@@ -17,6 +17,10 @@ import org.bukkit.plugin.java.annotation.plugin.author.Author;
 import java.sql.SQLException;
 import java.util.Objects;
 
+/**
+ * The main class of the plugin
+ * @author Henry Schnatz
+ */
 @Plugin(name="GroupPluginSchnatz", version="1.0")
 @Description("A plugin that manages users by using groups")
 @ApiVersion(ApiVersion.Target.v1_19)
@@ -46,15 +50,31 @@ import java.util.Objects;
 @Permission(name = "groupplugin.removeuserfromgroup", desc = "Permission to remove users from groups", defaultValue =  PermissionDefault.OP)
 @Command(name = "removeuserfromgroup", desc = "Allows to remove a user from a group")
 public class Main extends JavaPlugin {
+    /**
+     * The database manager of the plugin
+     */
     private DatabaseManager databaseManager;
+    /**
+     * The plugin (used for asynchron tasks)
+     */
     private static org.bukkit.plugin.Plugin plugin;
 
+    /**
+     * The config
+     */
     private final FileConfiguration config = this.getConfig();
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onLoad() {
         super.onLoad();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onEnable() {
         super.onEnable();
@@ -86,6 +106,7 @@ public class Main extends JavaPlugin {
         PluginManager pm = Bukkit.getPluginManager();
         pm.registerEvents(new GroupListener(config.getString("MessageServerJoin"),  config.getString("MessageServerLeave"), config.getString("MessageChat"), config.getString("DefaultGroupName") ,databaseManager), this);
 
+        // Registering commands
         CommandSign commandSign = new CommandSign(databaseManager, config);
         Objects.requireNonNull(this.getCommand("sign")).setExecutor(commandSign);
         Objects.requireNonNull(this.getCommand("sign")).setTabCompleter(commandSign);
@@ -122,6 +143,9 @@ public class Main extends JavaPlugin {
         Objects.requireNonNull(this.getCommand("removeuserfromgroup")).setTabCompleter(commandRemoveUserFromGroup);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void onDisable() {
         super.onDisable();

@@ -12,6 +12,10 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * This command can be used to add a user to a group
+ * @author Henry Schnatz
+ */
 public class CommandAddUserToGroup extends DatabaseCommand{
     /**
      * The message the sender gets displayed when he has insufficient permission to perform the command
