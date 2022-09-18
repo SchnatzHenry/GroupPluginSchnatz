@@ -21,6 +21,7 @@ Bei Gleichstand entscheidet momentan noch der Zufall/ die Reihenfolge in der Dat
 
 Da ich leider keine weitere Zeit habe um sie in das Plugin zu stecken (fahren morgen den 19.09.22 in den Urlaub) wurden solche Kleinigkeiten absichtlich nicht beachtet.
 Alle geforderten Funktionen funktionieren und wurden bereits getestet.
+Die O-Notation entfällt aus gleichem Grund, ich bitte hierbei um Nachsicht. Bei Bedarf kann ich diese natürlich noch nachreichen.
 
 Viel Spaß mit dem Plugin und vielen Dank, dass Du Dir die Zeit nimmst es anzuschauen.
 
