@@ -1,14 +1,29 @@
 package com.schnatz.groupplugin;
 
+import com.schnatz.groupplugin.commands.CommandSign;
+import org.bukkit.Bukkit;
+import org.bukkit.plugin.Plugin;
+
 import java.sql.*;
-import java.util.LinkedList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.Date;
 
 /**
  * This class is used to manage all database actions.
  * @author Henry Schnatz
  */
+@SuppressWarnings("ConstantConditions")
 public class DatabaseManager {
+    /**
+     * The current plugin
+     */
+    private final Plugin plugin;
+    /**
+     * The timer used by the class
+     */
+    private final Timer timer;
     /**
      * The name of the table used to store the server groups
      */
@@ -100,6 +115,8 @@ public class DatabaseManager {
      * @throws SQLException if connecting to the database or initialising it goes wrong
      */
     public DatabaseManager(String ipAddress, int port, String user, String password, String databaseName, String defaultGroupName, String defaultGroupPrefix, int defaultGroupLevel, int defaultGroupColorCode) throws SQLException {
+        this.plugin = Main.getPlugin();
+        this.timer = new Timer();
         // initializing the missing class attributes
         this.ipAddress = ipAddress;
         this.port = port;
@@ -116,6 +133,9 @@ public class DatabaseManager {
 
         // initializing tables
         initTables();
+
+        // addTimerTasks
+        scheduleExpirations();
     }
 
     /**
@@ -174,7 +194,7 @@ public class DatabaseManager {
             throw new IllegalArgumentException("The given group name does already exist!");
         if(name.length() > 30)
             throw new IllegalArgumentException("Group names must only be 30 characters long!");
-        if(name.length() > 10)
+        if(prefix.length() > 10)
             throw new IllegalArgumentException("Group prefixes must only be 10 characters long!");
         if(colorCode < 0 || colorCode > 15)
             throw new IllegalArgumentException("The color codes must be within the range of 0 to 15");
@@ -195,16 +215,17 @@ public class DatabaseManager {
         checkForEmptyString(newName, "new name");
         if(!existsGroup(group))
             throw new IllegalArgumentException("The given group does not exist!");
-        if(group.length() > 30)
-            throw new IllegalArgumentException("Group names must only be 30 characters long!");
-        if(defaultGroupName.equals(group))
+        if(defaultGroupName.equalsIgnoreCase(group))
             throw new IllegalArgumentException("The default group must not be renamed!");
+        if(newName.length() > 30)
+            throw new IllegalArgumentException("Group names must only be 30 characters long!");
         if(existsGroup(newName))
             throw new IllegalArgumentException("The given new group name does already exist!");
         try (Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + newName + "' WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
             statement.executeUpdate("UPDATE " + TABLE_USERS + " SET " + TABLE_USERS_ATTRIBUTE_USERGROUP + " = '" + newName + "' WHERE " + TABLE_USERS_ATTRIBUTE_USERGROUP + " = '" + group + "'");
         }
+        updateGroup(newName);
     }
 
     /**
@@ -223,6 +244,7 @@ public class DatabaseManager {
         try(Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPPREFIX + " = '" + prefix + "' WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
         }
+        updateGroup(group);
     }
 
     /**
@@ -241,6 +263,7 @@ public class DatabaseManager {
         try(Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPCOLORCODE + " = " + colorCode + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
         }
+        updateGroup(group);
     }
 
     /**
@@ -257,6 +280,7 @@ public class DatabaseManager {
         try(Statement statement = connection.createStatement()) {
             statement.executeUpdate("UPDATE " + TABLE_GROUPS + " SET " + TABLE_GROUPS_ATTRIBUTE_GROUPLEVEL + " = " + level + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + group + "'");
         }
+        updateGroup(group);
     }
 
     /**
@@ -272,7 +296,7 @@ public class DatabaseManager {
             throw new IllegalArgumentException("The given group does not exist!");
         List<String> list = new LinkedList<>();
         try(Statement statement = connection.createStatement()){
-            ResultSet res = statement.executeQuery("SELECT " + TABLE_USERS_ATTRIBUTE_USERUUID + " FROM " + TABLE_USERS + " WHERE " + TABLE_USERS_ATTRIBUTE_USERGROUP + "='" + group + "'");
+            ResultSet res = statement.executeQuery("SELECT " + TABLE_USERS_ATTRIBUTE_USERUUID + " FROM " + TABLE_USERS + " WHERE lower(" + TABLE_USERS_ATTRIBUTE_USERGROUP + ") ='" + group.toLowerCase() + "'");
             while(!res.isClosed() && res.next()) {
                 list.add(res.getString(1));
             }
@@ -288,7 +312,7 @@ public class DatabaseManager {
      */
     public void removeGroup(String group) throws IllegalArgumentException, SQLException {
         checkForEmptyString(group, "group name");
-        if(defaultGroupName.equals(group))
+        if(defaultGroupName.equalsIgnoreCase(group))
             throw new IllegalArgumentException("The default group must not be deleted");
         if(!existsGroup(group))
             throw new IllegalArgumentException("The given group does not exist!");
@@ -313,16 +337,55 @@ public class DatabaseManager {
         checkForEmptyString(uuid, "uuid");
         if(!existsGroup(group))
             throw new IllegalArgumentException("The given group does not exist!");
+        String caseSensitiveGroupname;
+        try(Statement statement = connection.createStatement()){
+            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS + " WHERE lower(" + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + ") ='" + group + "'");
+            res.next();
+            caseSensitiveGroupname = res.getString(1);
+        }
         if(getGroups(uuid).contains(group))
             throw new IllegalArgumentException("The given user is already member of the given group!");
         try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate("INSERT INTO " + TABLE_USERS + "(" + TABLE_USERS_ATTRIBUTE_USERUUID + ", " + TABLE_USERS_ATTRIBUTE_USERGROUP + ", " + TABLE_USERS_ATTRIBUTE_EXPIRATIONTIME + ") VALUES('" + uuid + "','" + group + "', NULL)");
+            statement.executeUpdate("INSERT INTO " + TABLE_USERS + "(" + TABLE_USERS_ATTRIBUTE_USERUUID + ", " + TABLE_USERS_ATTRIBUTE_USERGROUP + ", " + TABLE_USERS_ATTRIBUTE_EXPIRATIONTIME + ") VALUES('" + uuid + "','" + caseSensitiveGroupname + "', NULL)");
         }
         updateUser(uuid);
     }
 
-    public void addUserToGroup(String uuid, String group, int hours, int minutes, int seconds) {
-        //TODO
+    public void addUserToGroup(String uuid, String group, int days, int hours, int minutes, int seconds) throws IllegalArgumentException, SQLException {
+        if(days < 0 || hours < 0 || minutes < 0 || seconds < 0)
+            throw new IllegalArgumentException("The given times must be bigger than 0!");
+
+        LocalDateTime time = LocalDateTime.now(ZoneId.of("Europe/Berlin"));
+        time = time.plusDays(days);
+        time = time.plusHours(hours);
+        time = time.plusMinutes(minutes);
+        time = time.plusSeconds(seconds);
+        time = time.minusNanos(time.getNano());
+
+        Timestamp timestamp = Timestamp.valueOf(time);
+
+        scheduleExpiration(uuid, timestamp);
+
+
+        checkForEmptyString(group, "group name");
+        checkForEmptyString(uuid, "uuid");
+        if(!existsGroup(group))
+            throw new IllegalArgumentException("The given group does not exist!");
+        String caseSensitiveGroupname;
+        try(Statement statement = connection.createStatement()){
+            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS + " WHERE lower(" + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + ") ='" + group + "'");
+            res.next();
+            caseSensitiveGroupname = res.getString(1);
+        }
+        if(getGroups(uuid).contains(group))
+            throw new IllegalArgumentException("The given user is already member of the given group!");
+        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO " + TABLE_USERS + "(" + TABLE_USERS_ATTRIBUTE_USERUUID + ", " + TABLE_USERS_ATTRIBUTE_USERGROUP + ", " + TABLE_USERS_ATTRIBUTE_EXPIRATIONTIME + ") VALUES(?, ?, ?)")) {
+            statement.setString(1, uuid);
+            statement.setString(2, caseSensitiveGroupname);
+            statement.setTimestamp(3, timestamp);
+            statement.executeUpdate();
+        }
+        updateUser(uuid);
     }
 
     /**
@@ -451,27 +514,64 @@ public class DatabaseManager {
      * @param uuid the user's uuid
      */
     public void updateUser(String uuid) {
-        //TODO
+        Runnable updateSignsTask = () -> {
+            try {
+                CommandSign.updateSigns(uuid, getUsersGroupWithHighestLevel(uuid));
+            } catch (SQLException e) {
+                Bukkit.getLogger().warning(e.getMessage());
+            }
+        };
+        if(Bukkit.getServer() != null)
+            Bukkit.getScheduler().runTask(plugin, updateSignsTask);
     }
 
+    /**
+     * Updates the given group's ingame appearance whenever necessary
+     * @param groupName the group's name
+     */
+    public void updateGroup(String groupName) throws SQLException {
+        try{
+            if(!existsGroup(groupName))
+                return;
+        } catch(SQLException e) {
+            return;
+        }
+        List<String> uuids = getGroupsUsers(groupName);
+        for(String uuid : uuids)
+            updateUser(uuid);
+
+    }
 
     /**
-     * Returns the time the user has left in that group in seconds
+     * Returns the date and time untill the user is no member of the given group anymore
      * @param uuid the user's uuid
      * @param group the group's name
-     * @return the time the user has left in that group in seconds
+     * @return the date and time untill the user is no member of the given group anymore
      * @throws IllegalArgumentException if the given groupname or username is an emty String
      * @throws SQLException if something goes wrong with the database connection
      */
-    public int groupTimeLeft(String uuid, String group) throws IllegalArgumentException, SQLException {
+    public LocalDateTime groupTimeLeft(String uuid, String group) throws IllegalArgumentException, SQLException {
         checkForEmptyString(uuid, "uuid");
         checkForEmptyString(group, "group");
         if(!getGroups(uuid).contains(group))
-            return 0;
-        //TODO Zeitlimits einfuegen
-        return Integer.MAX_VALUE;
+            return null;
+        try(PreparedStatement statement = connection.prepareStatement("SELECT " + TABLE_USERS_ATTRIBUTE_EXPIRATIONTIME + " FROM " + TABLE_USERS + " WHERE lower(" + TABLE_USERS_ATTRIBUTE_USERGROUP + ") = ? AND " + TABLE_USERS_ATTRIBUTE_USERUUID + " = ?")){
+            statement.setString(1, group.toLowerCase());
+            statement.setString(2, uuid);
+            ResultSet res = statement.executeQuery();
+            res.next();
+            Timestamp timestamp = res.getTimestamp(1);
+            if(timestamp == null)
+                return LocalDateTime.MAX;
+            return timestamp.toLocalDateTime();
+        }
     }
 
+    /**
+     * Returns a list of all existing groups
+     * @return a list of all existing groups
+     * @throws SQLException if something goes wrong with the database connection
+     */
     public List<String> getAllGroups() throws SQLException {
         try(Statement statement = connection.createStatement()){
             ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS);
@@ -481,30 +581,6 @@ public class DatabaseManager {
             }
             return list;
         }
-    }
-
-    // HELPER
-    /**
-     * Checks whether the given groupname exists or not
-     * @param groupname the given groupname
-     * @return true if the given groupname does exist - false if the given groupname does not exist
-     * @throws SQLException if something goes wrong with the database connection
-     */
-    private boolean existsGroup(String groupname) throws SQLException {
-        try(Statement statement = connection.createStatement()) {
-            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS + " WHERE " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " = '" + groupname + "'");
-            return res.isBeforeFirst();
-        }
-    }
-
-    /**
-     * Checks whether the given text is empty
-     * @param text the given text
-     * @throws IllegalArgumentException if the given text is empty
-     */
-    private void checkForEmptyString(String text, String variable) throws IllegalArgumentException {
-        if(text.equals(""))
-            throw new IllegalArgumentException("The " + variable + " must contain at least 1 character!");
     }
 
     /**
@@ -531,5 +607,67 @@ public class DatabaseManager {
                 return g;
         }
         throw new IllegalStateException("Something went wrong while fetching the group with the highest level for user " + uuid + "!");
+    }
+
+    // HELPER
+
+    /**
+     * Checks whether the given groupname exists or not
+     * @param groupname the given groupname
+     * @return true if the given groupname does exist - false if the given groupname does not exist
+     * @throws SQLException if something goes wrong with the database connection
+     */
+    private boolean existsGroup(String groupname) throws SQLException {
+        try(Statement statement = connection.createStatement()) {
+            ResultSet res = statement.executeQuery("SELECT " + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + " FROM " + TABLE_GROUPS + " WHERE lower(" + TABLE_GROUPS_ATTRIBUTE_GROUPNAME + ") = '" + groupname.toLowerCase() + "'");
+            return res.isBeforeFirst();
+        }
+    }
+
+    /**
+     * Checks whether the given text is empty
+     * @param text the given text
+     * @throws IllegalArgumentException if the given text is empty
+     */
+    private void checkForEmptyString(String text, String variable) throws IllegalArgumentException {
+        if(text.equals(""))
+            throw new IllegalArgumentException("The " + variable + " must contain at least 1 character!");
+    }
+
+    /**
+     * Schedules all group membership expirations
+     */
+    private void scheduleExpirations() throws SQLException {
+        try(PreparedStatement statement = connection.prepareStatement("SELECT " + TABLE_USERS_ATTRIBUTE_USERUUID + "," + TABLE_USERS_ATTRIBUTE_EXPIRATIONTIME + " FROM " + TABLE_USERS + " WHERE " + TABLE_USERS_ATTRIBUTE_EXPIRATIONTIME + " IS NOT NULL")){
+            ResultSet res = statement.executeQuery();
+            while(!res.isClosed() && res.next()) {
+                String uuid = res.getString(1);
+                Timestamp timestamp = res.getTimestamp(2);
+                scheduleExpiration(uuid, timestamp);
+            }
+        }
+    }
+
+    /**
+     * Removes user's whose group membership expires at the given time
+     * @param timestamp the given time
+     */
+    @SuppressWarnings({"deprecation", "MagicConstant"})
+    private void scheduleExpiration(String uuid, Timestamp timestamp) {
+        TimerTask deleteFromGroup = new TimerTask() {
+            @Override
+            public void run() {
+                try(PreparedStatement statement = connection.prepareStatement("DELETE FROM " + TABLE_USERS + " WHERE " + TABLE_USERS_ATTRIBUTE_EXPIRATIONTIME + " = ?")){
+                    statement.setTimestamp(1, timestamp);
+                    statement.executeUpdate();
+                } catch (Exception e) {
+                    Bukkit.getLogger().warning(e.getMessage());
+                }
+                updateUser(uuid);
+            }
+        };
+        LocalDateTime time = timestamp.toLocalDateTime();
+        Date date = new Date(time.getYear()-1900, time.getMonthValue()-1, time.getDayOfMonth(), time.getHour(), time.getMinute(), time.getSecond());
+        timer.schedule(deleteFromGroup, date);
     }
 }

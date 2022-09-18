@@ -2,10 +2,6 @@ package com.schnatz.groupplugin;
 
 import com.schnatz.groupplugin.commands.*;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.World;
-import org.bukkit.block.Block;
-import org.bukkit.block.Sign;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.PluginManager;
@@ -19,14 +15,16 @@ import org.bukkit.plugin.java.annotation.plugin.Plugin;
 import org.bukkit.plugin.java.annotation.plugin.author.Author;
 
 import java.sql.SQLException;
+import java.util.Objects;
+
 @Plugin(name="GroupPluginSchnatz", version="1.0")
 @Description("A plugin that manages users by using groups")
 @ApiVersion(ApiVersion.Target.v1_19)
 @Author("Henry Schnatz")
-@Permission(name = "sign", desc = "Permission to summon an information sign", defaultValue = PermissionDefault.NOT_OP)
+@Permission(name = "sign", desc = "Permission to summon an information sign", defaultValue = PermissionDefault.TRUE)
 @Command(name = "sign", desc = "Allows to summon an information sign")
 @Permission(name = "groupplugin.*", desc = "Wildcard groupplugin permission", defaultValue = PermissionDefault.OP)
-@Permission(name = "groupplugin.*", desc = "Wildcard groupplugin permission", defaultValue = PermissionDefault.OP, children = {@ChildPermission(name = "groupplugin.creategroup"), @ChildPermission(name = "groupplugin.deletegroup"), @ChildPermission(name = "groupplugin.getgroups"), @ChildPermission(name = "groupplugin.editgroupname"), @ChildPermission(name = "groupplugin.editgroupprefix"), @ChildPermission(name = "groupplugin.editgrouplevel"), @ChildPermission(name = "groupplugin.editgroupcolorcode")})
+@Permission(name = "groupplugin.*", desc = "Wildcard groupplugin permission", defaultValue = PermissionDefault.OP, children = {@ChildPermission(name = "groupplugin.creategroup"), @ChildPermission(name = "groupplugin.deletegroup"), @ChildPermission(name = "groupplugin.getgroups"), @ChildPermission(name = "groupplugin.editgroupname"), @ChildPermission(name = "groupplugin.editgroupprefix"), @ChildPermission(name = "groupplugin.editgrouplevel"), @ChildPermission(name = "groupplugin.editgroupcolorcode"), @ChildPermission(name = "groupplugin.groupinfo"), @ChildPermission(name = "groupplugin.addusertogroup"), @ChildPermission(name = "groupplugin.removeuserfromgroup")})
 @Permission(name = "groupplugin.creategroup", desc = "Permission to create groups", defaultValue = PermissionDefault.OP)
 @Command(name = "creategroup", desc = "Allows to create groups")
 @Permission(name = "groupplugin.deletegroup", desc = "Permission to create groups", defaultValue = PermissionDefault.OP)
@@ -41,8 +39,15 @@ import java.sql.SQLException;
 @Command(name = "editgrouplevel", desc = "Allows to edit a group's level")
 @Permission(name = "groupplugin.editgroupcolorcode", desc = "Permission to edit group color codes", defaultValue =  PermissionDefault.OP)
 @Command(name = "editgroupcolorcode", desc = "Allows to edit a group's color code")
+@Permission(name = "groupplugin.groupinfo", desc = "Permission to request information about groups", defaultValue =  PermissionDefault.OP)
+@Command(name = "groupinfo", desc = "Allows to request information about a group")
+@Permission(name = "groupplugin.addusertogroup", desc = "Permission to add users to groups", defaultValue =  PermissionDefault.OP)
+@Command(name = "addusertogroup", desc = "Allows to add a user to a group")
+@Permission(name = "groupplugin.removeuserfromgroup", desc = "Permission to remove users from groups", defaultValue =  PermissionDefault.OP)
+@Command(name = "removeuserfromgroup", desc = "Allows to remove a user from a group")
 public class Main extends JavaPlugin {
     private DatabaseManager databaseManager;
+    private static org.bukkit.plugin.Plugin plugin;
 
     private final FileConfiguration config = this.getConfig();
     @Override
@@ -54,7 +59,7 @@ public class Main extends JavaPlugin {
     public void onEnable() {
         super.onEnable();
         buildConfig();
-
+        plugin = this;
         try {
             if (!(config.isString("DatabaseIpAddress")
                     && config.isInt("DatabasePort")
@@ -82,35 +87,45 @@ public class Main extends JavaPlugin {
         pm.registerEvents(new GroupListener(config.getString("MessageServerJoin"),  config.getString("MessageServerLeave"), config.getString("MessageChat"), config.getString("DefaultGroupName") ,databaseManager), this);
 
         CommandSign commandSign = new CommandSign(databaseManager, config);
-        this.getCommand("sign").setExecutor(commandSign);
-        this.getCommand("sign").setTabCompleter(commandSign);
+        Objects.requireNonNull(this.getCommand("sign")).setExecutor(commandSign);
+        Objects.requireNonNull(this.getCommand("sign")).setTabCompleter(commandSign);
 
         CommandCreateGroup commandCreateGroup = new CommandCreateGroup(databaseManager, config);
-        this.getCommand("creategroup").setExecutor(commandCreateGroup);
-        this.getCommand("creategroup").setTabCompleter(commandCreateGroup);
+        Objects.requireNonNull(this.getCommand("creategroup")).setExecutor(commandCreateGroup);
+        Objects.requireNonNull(this.getCommand("creategroup")).setTabCompleter(commandCreateGroup);
         CommandDeleteGroup commandDeleteGroup = new CommandDeleteGroup(databaseManager, config);
-        this.getCommand("deletegroup").setExecutor(commandDeleteGroup);
-        this.getCommand("deletegroup").setTabCompleter(commandDeleteGroup);
+        Objects.requireNonNull(this.getCommand("deletegroup")).setExecutor(commandDeleteGroup);
+        Objects.requireNonNull(this.getCommand("deletegroup")).setTabCompleter(commandDeleteGroup);
         CommandGetGroups commandGetGroups = new CommandGetGroups(databaseManager, config);
-        this.getCommand("getgroups").setExecutor(commandGetGroups);
-        this.getCommand("getgroups").setTabCompleter(commandGetGroups);
+        Objects.requireNonNull(this.getCommand("getgroups")).setExecutor(commandGetGroups);
+        Objects.requireNonNull(this.getCommand("getgroups")).setTabCompleter(commandGetGroups);
         CommandEditGroupName commandEditGroupName = new CommandEditGroupName(databaseManager, config);
-        this.getCommand("editgroupname").setExecutor(commandEditGroupName);
-        this.getCommand("editgroupname").setTabCompleter(commandEditGroupName);
+        Objects.requireNonNull(this.getCommand("editgroupname")).setExecutor(commandEditGroupName);
+        Objects.requireNonNull(this.getCommand("editgroupname")).setTabCompleter(commandEditGroupName);
         CommandEditGroupPrefix commandEditGroupPrefix = new CommandEditGroupPrefix(databaseManager, config);
-        this.getCommand("editgroupprefix").setExecutor(commandEditGroupPrefix);
-        this.getCommand("editgroupprefix").setTabCompleter(commandEditGroupPrefix);
+        Objects.requireNonNull(this.getCommand("editgroupprefix")).setExecutor(commandEditGroupPrefix);
+        Objects.requireNonNull(this.getCommand("editgroupprefix")).setTabCompleter(commandEditGroupPrefix);
         CommandEditGroupLevel commandEditGroupLevel = new CommandEditGroupLevel(databaseManager,config);
-        this.getCommand("editgrouplevel").setExecutor(commandEditGroupLevel);
-        this.getCommand("editgrouplevel").setTabCompleter(commandEditGroupLevel);
+        Objects.requireNonNull(this.getCommand("editgrouplevel")).setExecutor(commandEditGroupLevel);
+        Objects.requireNonNull(this.getCommand("editgrouplevel")).setTabCompleter(commandEditGroupLevel);
         CommandEditGroupColorCode commandEditGroupColorCode = new CommandEditGroupColorCode(databaseManager, config);
-        this.getCommand("editgroupcolorcode").setExecutor(commandEditGroupColorCode);
-        this.getCommand("editgroupcolorcode").setTabCompleter(commandEditGroupColorCode);
+        Objects.requireNonNull(this.getCommand("editgroupcolorcode")).setExecutor(commandEditGroupColorCode);
+        Objects.requireNonNull(this.getCommand("editgroupcolorcode")).setTabCompleter(commandEditGroupColorCode);
+        CommandGroupInfo commandGroupInfo = new CommandGroupInfo(databaseManager, config);
+        Objects.requireNonNull(this.getCommand("groupinfo")).setExecutor(commandGroupInfo);
+        Objects.requireNonNull(this.getCommand("groupinfo")).setTabCompleter(commandGroupInfo);
+        CommandAddUserToGroup commandAddUserToGroup = new CommandAddUserToGroup(databaseManager, config);
+        Objects.requireNonNull(this.getCommand("addusertogroup")).setExecutor(commandAddUserToGroup);
+        Objects.requireNonNull(this.getCommand("addusertogroup")).setTabCompleter(commandAddUserToGroup);
+        CommandRemoveUserFromGroup commandRemoveUserFromGroup = new CommandRemoveUserFromGroup(databaseManager, config);
+        Objects.requireNonNull(this.getCommand("removeuserfromgroup")).setExecutor(commandRemoveUserFromGroup);
+        Objects.requireNonNull(this.getCommand("removeuserfromgroup")).setTabCompleter(commandRemoveUserFromGroup);
     }
 
     @Override
     public void onDisable() {
         super.onDisable();
+        CommandSign.removeAllSigns();
     }
 
     /**
@@ -118,5 +133,15 @@ public class Main extends JavaPlugin {
      */
     public void buildConfig() {
         new ConfigBuilder(this);
+    }
+
+    // HELPER
+
+    /**
+     * Returns the current plugin
+     * @return the current plugin
+     */
+    public static org.bukkit.plugin.Plugin getPlugin(){
+        return plugin;
     }
 }

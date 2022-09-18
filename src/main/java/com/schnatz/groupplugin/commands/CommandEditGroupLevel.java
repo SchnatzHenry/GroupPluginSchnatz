@@ -4,6 +4,7 @@ import com.schnatz.groupplugin.DatabaseManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -43,20 +44,27 @@ public class CommandEditGroupLevel extends DatabaseCommand {
      */
     public CommandEditGroupLevel(DatabaseManager databaseManager, FileConfiguration config) {
         super(databaseManager, config);
-        // TODO init Strings
-        this.insufficientPermissionMessage = "You have insufficient permission to use this command!";
-        this.usageMessage = "Please use as following: /editgrouplevel <groupname> <newlevel>";
-        this.sqlErrorMessage = "Something went wrong internally, please try again later!";
-        this.groupLevelEditedMessage = "Changed the level of group %group% to %newlevel%!";
-        this.groupNameDoesNotExistMessage = "There is no group with the given name!";
-        this.levelMustBeIntegerMessage = "The given level must be an integer!";
+        if(!(config.isString("CommandEditGroupLevelInsufficientPermissionMessage")
+                && config.isString("CommandEditGroupLevelUsageMessage")
+                && config.isString("CommandEditGroupLevelSqlErrorMessage")
+                && config.isString("CommandEditGroupLevelGroupLevelEditedMessage")
+                && config.isString("CommandEditGroupLevelGroupNameDoesNotExistMessage")
+                && config.isString("CommandEditGroupLevelLevelMustBeIntegerMessage")))
+            throw new IllegalStateException();
+
+        this.insufficientPermissionMessage = config.getString("CommandEditGroupLevelInsufficientPermissionMessage");
+        this.usageMessage = config.getString("CommandEditGroupLevelUsageMessage");
+        this.sqlErrorMessage = config.getString("CommandEditGroupLevelSqlErrorMessage");
+        this.groupLevelEditedMessage = config.getString("CommandEditGroupLevelGroupLevelEditedMessage");
+        this.groupNameDoesNotExistMessage = config.getString("CommandEditGroupLevelGroupNameDoesNotExistMessage");
+        this.levelMustBeIntegerMessage = config.getString("CommandEditGroupLevelLevelMustBeIntegerMessage");
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (!sender.hasPermission("groupplugin.editgrouplevel")) {
             sender.sendMessage(insufficientPermissionMessage);
             return true;
@@ -67,7 +75,7 @@ public class CommandEditGroupLevel extends DatabaseCommand {
         }
         int newLevel;
         try {
-            newLevel = Integer.valueOf(args[1]);
+            newLevel = Integer.parseInt(args[1]);
         } catch(NumberFormatException e) {
             sender.sendMessage(levelMustBeIntegerMessage);
             return true;
@@ -80,7 +88,7 @@ public class CommandEditGroupLevel extends DatabaseCommand {
      * {@inheritDoc}
      */
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         List<String> list = new LinkedList<>();
         if (args.length == 1) {
             try {
@@ -117,9 +125,9 @@ public class CommandEditGroupLevel extends DatabaseCommand {
      * @return the message that should be displayed
      */
     private String getErrorMessage(Exception e) {
-        return switch (e.getMessage()) {
-            case "The given group does not exist!" -> groupNameDoesNotExistMessage;
-            default -> "Something went wrong!";
-        };
+        if(e.getMessage().equals("The given group does not exist!"))
+            return groupNameDoesNotExistMessage;
+        else
+            return "Something went wrong!";
     }
 }

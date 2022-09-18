@@ -6,8 +6,12 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -70,26 +74,37 @@ public class CommandGetGroups extends DatabaseCommand {
      */
     public CommandGetGroups(DatabaseManager databaseManager, FileConfiguration config) {
         super(databaseManager, config);
-        //TRODO init Strings
-        this.insufficientPermissionMessage = "You have insufficient permission to use this command!";
-        this.usageMessage = "Please use as following: /getgroups <playername>";
-        this.playerNotFoundMessage = "Could not find a player named %user%";
-        this.sqlErrorMessage = "Something went wrong internally, please try again later";
-        this.memberOfFollowingGroupsMessage = "%user% is member of the following groups:";
-        this.memberOfGroupUnknownTimeMessage = "%group%: unknown time left";
-        this.memberOfGroupForEverMessage = "%group%";
-        this.memberOfGroupForTimesMessage = "%group%: %days% days, %hours% hours, %minutes% minutes and %seconds% seconds left";
-        this.memberOfGroupForTimeNoDaysMessage = "%group%: %hours% hours, %minutes% minutes and %seconds% seconds left";
-        this.memberOfGroupForTimeNoHoursMessage = "%group%: %minutes% minutes and %seconds% seconds left";
-        this.memberOfGroupForTimeNoMinutesMessage = "%group%: %seconds% seconds left";
+        if(!(config.isString("CommandGetGroupsInsufficientPermissionMessage")
+                && config.isString("CommandGetGroupsUsageMessage")
+                && config.isString("CommandGetGroupsPlayerNotFoundMessage")
+                && config.isString("CommandGetGroupsSqlErrorMessage")
+                && config.isString("CommandGetGroupsMemberOfFollowingGroupsMessage")
+                && config.isString("CommandGetGroupsMemberOfGroupUnknownTimeMessage")
+                && config.isString("CommandGetGroupsMemberOfGroupForEverMessage")
+                && config.isString("CommandGetGroupsMemberOfGroupForTimesMessage")
+                && config.isString("CommandGetGroupsMemberOfGroupForTimeNoDaysMessage")
+                && config.isString("CommandGetGroupsMemberOfGroupForTimeNoHoursMessage")
+                && config.isString("CommandGetGroupsMemberOfGroupForTimeNoMinutesMessage")))
+            throw new IllegalStateException();
+
+        this.insufficientPermissionMessage = config.getString("CommandGetGroupsInsufficientPermissionMessage");
+        this.usageMessage = config.getString("CommandGetGroupsUsageMessage");
+        this.playerNotFoundMessage = config.getString("CommandGetGroupsPlayerNotFoundMessage");
+        this.sqlErrorMessage = config.getString("CommandGetGroupsSqlErrorMessage");
+        this.memberOfFollowingGroupsMessage = config.getString("CommandGetGroupsMemberOfFollowingGroupsMessage");
+        this.memberOfGroupUnknownTimeMessage = config.getString("CommandGetGroupsMemberOfGroupUnknownTimeMessage");
+        this.memberOfGroupForEverMessage = config.getString("CommandGetGroupsMemberOfGroupForEverMessage");
+        this.memberOfGroupForTimesMessage = config.getString("CommandGetGroupsMemberOfGroupForTimesMessage");
+        this.memberOfGroupForTimeNoDaysMessage = config.getString("CommandGetGroupsMemberOfGroupForTimeNoDaysMessage");
+        this.memberOfGroupForTimeNoHoursMessage = config.getString("CommandGetGroupsMemberOfGroupForTimeNoHoursMessage");
+        this.memberOfGroupForTimeNoMinutesMessage = config.getString("CommandGetGroupsMemberOfGroupForTimeNoMinutesMessage");
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        // TODO ingame mit den Zeitlimites testen!
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if(!sender.hasPermission("groupplugin.getgroups")){
             sender.sendMessage(insufficientPermissionMessage);
             return true;
@@ -113,36 +128,41 @@ public class CommandGetGroups extends DatabaseCommand {
         }
         sender.sendMessage(memberOfFollowingGroupsMessage.replace("%user%", args[0]));
         for(String g : groups) {
-            int timeLeft;
+            LocalDateTime expirationTime;
             try {
-                timeLeft = databaseManager.groupTimeLeft(uuid, g);
+                expirationTime = databaseManager.groupTimeLeft(uuid, g);
             } catch (SQLException e) {
-                timeLeft = -1;
-            }
-            if(timeLeft == -1) {
                 sender.sendMessage(memberOfGroupUnknownTimeMessage.replace("%group%", g));
                 continue;
             }
-            if(timeLeft == Integer.MAX_VALUE) {
+            if(expirationTime == null) {
+                continue;
+            }
+            if(expirationTime.equals(LocalDateTime.MAX)) {
                 sender.sendMessage(memberOfGroupForEverMessage.replace("%group%", g));
                 continue;
             }
 
-            int finalSeconds = timeLeft%60;
-            int minutes = (timeLeft-finalSeconds)/60;
-            int finalMinutes = minutes%60;
-            int hours = (minutes-finalMinutes)/60;
-            int finalHours = hours%24;
-            int finalDays = (hours-finalHours)/24;
+            LocalDateTime now = LocalDateTime.now(ZoneId.of("Europe/Berlin"));
 
-            if(finalDays != 0){
-                sender.sendMessage(memberOfGroupForTimesMessage.replace("%group%", g).replace("%days%", String.valueOf(finalDays)).replace("hours", String.valueOf(finalHours)).replace("minutes", String.valueOf(finalMinutes)).replace("seconds", String.valueOf(finalSeconds)));
-            } else if(finalHours != 0){
-                sender.sendMessage(memberOfGroupForTimeNoDaysMessage.replace("%group%", g).replace("hours", String.valueOf(finalHours)).replace("minutes", String.valueOf(finalMinutes)).replace("seconds", String.valueOf(finalSeconds)));
-            } else if(finalMinutes != 0){
-                sender.sendMessage(memberOfGroupForTimeNoHoursMessage.replace("%group%", g).replace("minutes", String.valueOf(finalMinutes)).replace("seconds", String.valueOf(finalSeconds)));
+            Duration duration = Duration.between(now, expirationTime);
+
+            long days = duration.toDays();
+            long hours = duration.toHours();
+            long minutes = duration.toMinutes();
+            long seconds = duration.getSeconds() - minutes*60;
+
+            minutes = minutes - hours*60;
+            hours = hours - days*24;
+
+            if(days != 0){
+                sender.sendMessage(memberOfGroupForTimesMessage.replace("%group%", g).replace("%days%", String.valueOf(days)).replace("%hours%", String.valueOf(hours)).replace("%minutes%", String.valueOf(minutes)).replace("%seconds%", String.valueOf(seconds)));
+            } else if(hours != 0){
+                sender.sendMessage(memberOfGroupForTimeNoDaysMessage.replace("%group%", g).replace("%hours%", String.valueOf(hours)).replace("%minutes%", String.valueOf(minutes)).replace("%seconds%", String.valueOf(seconds)));
+            } else if(minutes != 0){
+                sender.sendMessage(memberOfGroupForTimeNoHoursMessage.replace("%group%", g).replace("%minutes%", String.valueOf(minutes)).replace("%seconds%", String.valueOf(seconds)));
             } else {
-                sender.sendMessage(memberOfGroupForTimeNoMinutesMessage.replace("%group%", g).replace("seconds", String.valueOf(finalSeconds)));
+                sender.sendMessage(memberOfGroupForTimeNoMinutesMessage.replace("%group%", g).replace("%seconds%", String.valueOf(seconds)));
             }
         }
         return true;
@@ -152,7 +172,7 @@ public class CommandGetGroups extends DatabaseCommand {
      * {@inheritDoc}
      */
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         List<String> list = new LinkedList<>();
         if(args.length == 1) {
             for(Player p : Bukkit.getOnlinePlayers()) {

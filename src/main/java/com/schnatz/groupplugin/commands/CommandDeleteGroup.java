@@ -4,6 +4,7 @@ import com.schnatz.groupplugin.DatabaseManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -46,20 +47,27 @@ public class CommandDeleteGroup extends DatabaseCommand{
      */
     public CommandDeleteGroup(DatabaseManager databaseManager, FileConfiguration config) {
         super(databaseManager, config);
-        //TODO init Strings
-        this.insufficientPermissionMessage = "You have insufficient permission to use this command!";
-        this.usageMessage = "Please use as following: /deletegroup <name>";
-        this.sqlErrorMessage = "Something went wrong internally, please try again later";
-        this.groupNameDoesNotExistMessage = "The given group name does already exist!";
-        this.groupDeletedMessage = "Group %name% deleted";
-        this.deletingDefaultGroupMessage = "The default group must not be deleted!";
+        if(!(config.isString("CommandDeleteGroupInsufficientPermissionMessage")
+                && config.isString("CommandDeleteGroupUsageMessage")
+                && config.isString("CommandDeleteGroupSqlErrorMessage")
+                && config.isString("CommandDeleteGroupGroupNameDoesNotExistMessage")
+                && config.isString("CommandDeleteGroupGroupDeletedMessage")
+                && config.isString("CommandDeleteGroupDeletingDefaultGroupMessage")))
+            throw new IllegalStateException();
+
+        this.insufficientPermissionMessage = config.getString("CommandDeleteGroupInsufficientPermissionMessage");
+        this.usageMessage = config.getString("CommandDeleteGroupUsageMessage");
+        this.sqlErrorMessage = config.getString("CommandDeleteGroupSqlErrorMessage");
+        this.groupNameDoesNotExistMessage = config.getString("CommandDeleteGroupGroupNameDoesNotExistMessage");
+        this.groupDeletedMessage = config.getString("CommandDeleteGroupGroupDeletedMessage");
+        this.deletingDefaultGroupMessage = config.getString("CommandDeleteGroupDeletingDefaultGroupMessage");
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if(!sender.hasPermission("groupplugin.deletegroup")) {
             sender.sendMessage(insufficientPermissionMessage);
             return true;
@@ -76,7 +84,7 @@ public class CommandDeleteGroup extends DatabaseCommand{
      * {@inheritDoc}
      */
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         List<String> list = new LinkedList<>();
         if(args.length == 1) {
             try {

@@ -4,6 +4,7 @@ import com.schnatz.groupplugin.DatabaseManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -43,20 +44,27 @@ public class CommandEditGroupColorCode extends DatabaseCommand {
      */
     public CommandEditGroupColorCode(DatabaseManager databaseManager, FileConfiguration config) {
         super(databaseManager, config);
-        // TODO init Strings
-        this.insufficientPermissionMessage = "You have insufficient permission to use this command!";
-        this.usageMessage = "Please use as following: /editgroupcolorcode <groupname> <newpcolorcode>";
-        this.sqlErrorMessage = "Something went wrong internally, please try again later!";
-        this.groupColorCodeEditedMessage = "Changed the color code of group %group% to %newcolorcode%!";
-        this.groupNameDoesNotExistMessage = "There is no group with the given name!";
-        this.invalidColorCodeMessage = "The given color code is invalid, please do only use the following 0-9 and a-f!";
+        if(!(config.isString("CommandEditGroupColorCodeInsufficientPermissionMessage")
+                && config.isString("CommandEditGroupColorCodeUsageMessage")
+                && config.isString("CommandEditGroupColorCodeSqlErrorMessage")
+                && config.isString("CommandEditGroupColorCodeGroupColorCodeEditedMessage")
+                && config.isString("CommandEditGroupColorCodeGroupNameDoesNotExistMessage")
+                && config.isString("CommandEditGroupColorCodeInvalidColorCodeMessage")))
+            throw new IllegalStateException();
+
+        this.insufficientPermissionMessage = config.getString("CommandEditGroupColorCodeInsufficientPermissionMessage");
+        this.usageMessage = config.getString("CommandEditGroupColorCodeUsageMessage");
+        this.sqlErrorMessage = config.getString("CommandEditGroupColorCodeSqlErrorMessage");
+        this.groupColorCodeEditedMessage = config.getString("CommandEditGroupColorCodeGroupColorCodeEditedMessage");
+        this.groupNameDoesNotExistMessage = config.getString("CommandEditGroupColorCodeGroupNameDoesNotExistMessage");
+        this.invalidColorCodeMessage = config.getString("CommandEditGroupColorCodeInvalidColorCodeMessage");
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (!sender.hasPermission("groupplugin.editgroupprefix")) {
             sender.sendMessage(insufficientPermissionMessage);
             return true;
@@ -85,7 +93,7 @@ public class CommandEditGroupColorCode extends DatabaseCommand {
      * {@inheritDoc}
      */
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         List<String> list = new LinkedList<>();
         if (args.length == 1) {
             try {
@@ -108,7 +116,7 @@ public class CommandEditGroupColorCode extends DatabaseCommand {
     private void editGroupPrefix(CommandSender sender, String group, int newColorCode) {
         try {
             databaseManager.editGroupColorCode(group, newColorCode);
-            sender.sendMessage(groupColorCodeEditedMessage.replace("%group%", group).replace("%newcolorcode%", String.valueOf(newColorCode)));
+            sender.sendMessage(groupColorCodeEditedMessage.replace("%group%", group).replace("%newcolorcode%", String.valueOf(Character.forDigit(newColorCode, 16))));
         } catch (SQLException e) {
             sender.sendMessage(sqlErrorMessage);
         } catch (IllegalArgumentException e) {
@@ -122,10 +130,10 @@ public class CommandEditGroupColorCode extends DatabaseCommand {
      * @return the message that should be displayed
      */
     private String getErrorMessage(Exception e) {
-        return switch (e.getMessage()) {
-            case "The given group does not exist!" -> groupNameDoesNotExistMessage;
-            default -> "Something went wrong!";
-        };
+        if(e.getMessage().equals("The given group does not exist!"))
+            return groupNameDoesNotExistMessage;
+        else
+            return "Something went wrong!";
     }
 
     /**

@@ -4,6 +4,7 @@ import com.schnatz.groupplugin.DatabaseManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -65,25 +66,37 @@ public class CommandCreateGroup extends DatabaseCommand {
      */
     public CommandCreateGroup(DatabaseManager databaseManager, FileConfiguration config) {
         super(databaseManager, config);
-        //TODO init Strings
-        this.insufficientPermissionMessage = "You have insufficient permission to use this command!";
-        this.usageMessage = "Please use as following: /createGroup <name>(30 characters) [<prefix>(10 characters) <level> <colorcode>(0-9, a-f)]";
-        this.defaultGroupLevel = 0;
-        this.defaultGroupColorCode = 0;
-        this.sqlErrorMessage = "Something went wrong internally, please try again later";
-        this.groupNameDoesExistMessage = "The given group name does already exist!";
-        this.groupNameTooLongMessage = "The given group name is too long (max: 30 characters)!";
-        this.prefixTooLongMessage = "The given prefix is too long (max: 10 characters)!";
-        this.invalidColorCodeMessage = "The given color code is invalid, please do only use the following 0-9 and a-f!";
-        this.groupCreatedMessage = "Group %name% created";
-        this.levelMustBeIntegerMessage = "The given level must be a number!";
+        if(!(config.isString("CommandCreateGroupInsufficientPermissionMessage")
+                && config.isString("CommandCreateGroupUsageMessage")
+                && config.isInt("CommandCreateGroupDefaultGroupLevel")
+                && config.isInt("CommandCreateGroupDefaultGroupColorCode")
+                && config.isString("CommandCreateGroupSqlErrorMessage")
+                && config.isString("CommandCreateGroupGroupNameDoesExistMessage")
+                && config.isString("CommandCreateGroupGroupNameTooLongMessage")
+                && config.isString("CommandCreateGroupPrefixTooLongMessage")
+                && config.isString("CommandCreateGroupInvalidColorCodeMessage")
+                && config.isString("CommandCreateGroupGroupCreatedMessage")
+                && config.isString("CommandCreateGroupLevelMustBeIntegerMessage")))
+            throw new IllegalStateException();
+
+        this.insufficientPermissionMessage = config.getString("CommandCreateGroupInsufficientPermissionMessage");
+        this.usageMessage = config.getString("CommandCreateGroupUsageMessage");
+        this.defaultGroupLevel = config.getInt("CommandCreateGroupDefaultGroupLevel");
+        this.defaultGroupColorCode = config.getInt("CommandCreateGroupDefaultGroupColorCode");
+        this.sqlErrorMessage = config.getString("CommandCreateGroupSqlErrorMessage");
+        this.groupNameDoesExistMessage = config.getString("CommandCreateGroupGroupNameDoesExistMessage");
+        this.groupNameTooLongMessage = config.getString("CommandCreateGroupGroupNameTooLongMessage");
+        this.prefixTooLongMessage = config.getString("CommandCreateGroupPrefixTooLongMessage");
+        this.invalidColorCodeMessage = config.getString("CommandCreateGroupInvalidColorCodeMessage");
+        this.groupCreatedMessage = config.getString("CommandCreateGroupGroupCreatedMessage");
+        this.levelMustBeIntegerMessage = config.getString("CommandCreateGroupLevelMustBeIntegerMessage");
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if(!sender.hasPermission("groupplugin.creategroup")) {
             sender.sendMessage(insufficientPermissionMessage);
             return true;
@@ -138,7 +151,7 @@ public class CommandCreateGroup extends DatabaseCommand {
      * {@inheritDoc}
      */
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         return new LinkedList<>();
     }
 

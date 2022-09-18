@@ -4,6 +4,7 @@ import com.schnatz.groupplugin.DatabaseManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -55,22 +56,31 @@ public class CommandEditGroupName  extends DatabaseCommand {
      */
     public CommandEditGroupName(DatabaseManager databaseManager, FileConfiguration config) {
         super(databaseManager, config);
-        //TODO init Strings
-        this.insufficientPermissionMessage = "You have insufficient permission to use this command!";
-        this.usageMessage = "Please use as following: /editgroupname <oldname> <newname>";
-        this.sqlErrorMessage = "Something went wrong internally, please try again later!";
-        this.groupNameEditedMessage = "Changed the groupname of group %oldname% to %newname%";
-        this.editingNameDefaultGroupMessage = "The default group's name must not be edited!";
-        this.groupNameDoesNotExistMessage = "There is no group with the given group name!";
-        this.newGroupNameTooLongMessage = "Group names must not be longer than 30 characters!";
-        this.newGroupNameDoesAlreadyExist = "There is already a group with the given name!";
+        if(!(config.isString("CommandEditGroupNameInsufficientPermissionMessage")
+                && config.isString("CommandEditGroupNameUsageMessage")
+                && config.isString("CommandEditGroupNameSqlErrorMessage")
+                && config.isString("CommandEditGroupNameGroupNameEditedMessage")
+                && config.isString("CommandEditGroupNameEditingNameDefaultGroupMessage")
+                && config.isString("CommandEditGroupNameGroupNameDoesNotExistMessage")
+                && config.isString("CommandEditGroupNameNewGroupNameTooLongMessage")
+                && config.isString("CommandEditGroupNameNewGroupNameDoesAlreadyExist")))
+            throw new IllegalStateException();
+
+        this.insufficientPermissionMessage = config.getString("CommandEditGroupNameInsufficientPermissionMessage");
+        this.usageMessage = config.getString("CommandEditGroupNameUsageMessage");
+        this.sqlErrorMessage = config.getString("CommandEditGroupNameSqlErrorMessage");
+        this.groupNameEditedMessage = config.getString("CommandEditGroupNameGroupNameEditedMessage");
+        this.editingNameDefaultGroupMessage = config.getString("CommandEditGroupNameEditingNameDefaultGroupMessage");
+        this.groupNameDoesNotExistMessage = config.getString("CommandEditGroupNameGroupNameDoesNotExistMessage");
+        this.newGroupNameTooLongMessage = config.getString("CommandEditGroupNameNewGroupNameTooLongMessage");
+        this.newGroupNameDoesAlreadyExist = config.getString("CommandEditGroupNameNewGroupNameDoesAlreadyExist");
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (!sender.hasPermission("groupplugin.editgroupname")) {
             sender.sendMessage(insufficientPermissionMessage);
             return true;
@@ -87,7 +97,7 @@ public class CommandEditGroupName  extends DatabaseCommand {
      * {@inheritDoc}
      */
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         List<String> list = new LinkedList<>();
         if (args.length == 1) {
             try {
@@ -107,7 +117,7 @@ public class CommandEditGroupName  extends DatabaseCommand {
      * @param oldName the group's old name
      * @param newName the group's new name
      */
-    private void editGroupName(CommandSender sender, String oldName, String newName) {
+    private void editGroupName(@NotNull CommandSender sender, @NotNull String oldName, @NotNull String newName) {
         try {
             databaseManager.editGroupName(oldName, newName);
             sender.sendMessage(groupNameEditedMessage.replace("%oldname%", oldName).replace("%newname%", newName));
@@ -125,7 +135,7 @@ public class CommandEditGroupName  extends DatabaseCommand {
      */
     private String getErrorMessage(Exception e) {
         return switch (e.getMessage()) {
-            case "The default group must not be renamed" -> editingNameDefaultGroupMessage;
+            case "The default group must not be renamed!" -> editingNameDefaultGroupMessage;
             case "The given group does not exist!" -> groupNameDoesNotExistMessage;
             case "Group names must only be 30 characters long!" -> newGroupNameTooLongMessage;
             case "The given new group name does already exist!" -> newGroupNameDoesAlreadyExist;

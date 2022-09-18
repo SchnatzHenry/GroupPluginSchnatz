@@ -4,6 +4,7 @@ import com.schnatz.groupplugin.DatabaseManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -47,20 +48,27 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
      */
     public CommandEditGroupPrefix(DatabaseManager databaseManager, FileConfiguration config) {
         super(databaseManager, config);
-        //TODO init Strings
-        this.insufficientPermissionMessage = "You have insufficient permission to use this command!";
-        this.usageMessage = "Please use as following: /editgroupprefix <groupname> <newprefix>";
-        this.sqlErrorMessage = "Something went wrong internally, please try again later!";
-        this.groupPrefixEditedMessage = "Changed the prefix of group %group% to %newprefix%!";
-        this.newGroupPrefixTooLongMessage = "Prefixes must not be longer than 10 characters!";
-        this.groupNameDoesNotExistMessage = "There is no group with the given name!";
+        if(!(config.isString("CommandEditGroupPrefixInsufficientPermissionMessage")
+                && config.isString("CommandEditGroupPrefixUsageMessage")
+                && config.isString("CommandEditGroupPrefixSqlErrorMessage")
+                && config.isString("CommandEditGroupPrefixGroupPrefixEditedMessage")
+                && config.isString("CommandEditGroupPrefixNewGroupPrefixTooLongMessage")
+                && config.isString("CommandEditGroupPrefixGroupNameDoesNotExistMessage")))
+            throw new IllegalStateException();
+
+        this.insufficientPermissionMessage = config.getString("CommandEditGroupPrefixInsufficientPermissionMessage");
+        this.usageMessage = config.getString("CommandEditGroupPrefixUsageMessage");
+        this.sqlErrorMessage = config.getString("CommandEditGroupPrefixSqlErrorMessage");
+        this.groupPrefixEditedMessage = config.getString("CommandEditGroupPrefixGroupPrefixEditedMessage");
+        this.newGroupPrefixTooLongMessage = config.getString("CommandEditGroupPrefixNewGroupPrefixTooLongMessage");
+        this.groupNameDoesNotExistMessage = config.getString("CommandEditGroupPrefixGroupNameDoesNotExistMessage");
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (!sender.hasPermission("groupplugin.editgroupprefix")) {
             sender.sendMessage(insufficientPermissionMessage);
             return true;
@@ -77,7 +85,7 @@ public class CommandEditGroupPrefix extends DatabaseCommand {
      * {@inheritDoc}
      */
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         List<String> list = new LinkedList<>();
         if (args.length == 1) {
             try {
